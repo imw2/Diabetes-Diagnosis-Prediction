@@ -1,4 +1,8 @@
-1. Research icd9 types of diabetes including what features are most important
-2. Research noteevents/ physician notes
-3. Produce test model with tensorflow for text classfication to icd9 diabetes code
-4. Determine number of patients with diabetes related symptoms
+Goals                                                                                        Completed
+
+1. Research icd9 types of diabetes including what features are most important                Yes       
+2. Research noteevents/ physician notes                                                      Yes/In Progress
+3. Produce test model with tensorflow for text classfication to icd9 diabetes code           Yes
+4. Determine number of patients with diabetes related symptoms                               Yes
+5. Create social network for diabetes codes
+6. Investigate into feature extraction methods for diabetes prediction model
