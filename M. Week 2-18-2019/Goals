@@ -1,0 +1,5 @@
+Goals moving forward
+
+Modify NN to improve model
+Use complete dataset vs. sample
+Possibly reduce some of the column dimensions(if the overall model score is not drastically diminished)
