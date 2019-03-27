@@ -1,0 +1,934 @@
+
+<html>
+  <head>
+    
+<link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css">
+<link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.0.4.min.css">
+<link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-tables-1.0.4.min.css">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+<style>div.hololayout {
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+div.holoframe {
+  width: 75%;
+}
+
+div.holowell {
+  display: flex;
+  align-items: center;
+}
+
+form.holoform {
+  background-color: #fafafa;
+  border-radius: 5px;
+  overflow: hidden;
+  padding-left: 0.8em;
+  padding-right: 0.8em;
+  padding-top: 0.4em;
+  padding-bottom: 0.4em;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  border: 1px solid #e3e3e3;
+}
+
+div.holowidgets {
+  padding-right: 0;
+  width: 25%;
+}
+
+div.holoslider {
+  min-height: 0 !important;
+  height: 0.8em;
+  width: 100%;
+}
+
+div.holoformgroup {
+  padding-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+div.hologroup {
+  padding-left: 0;
+  padding-right: 0.8em;
+  width: 100%;
+}
+
+.holoselect {
+  width: 92%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.holotext {
+  padding-left:  0.5em;
+  padding-right: 0;
+  width: 100%;
+}
+
+.holowidgets .ui-resizable-se {
+  visibility: hidden
+}
+
+.holoframe > .ui-resizable-se {
+  visibility: hidden
+}
+
+.holowidgets .ui-resizable-s {
+  visibility: hidden
+}
+
+
+/* CSS rules for noUISlider based slider used by JupyterLab extension  */
+
+.noUi-handle {
+  width: 20px !important;
+  height: 20px !important;
+  left: -5px !important;
+  top: -5px !important;
+}
+
+.noUi-handle:before, .noUi-handle:after {
+  visibility: hidden;
+  height: 0px;
+}
+
+.noUi-target {
+  margin-left: 0.5em;
+  margin-right: 0.5em;
+}
+
+div.bk-hbox {
+    display: flex;
+    justify-content: center;
+}
+
+div.bk-hbox div.bk-plot {
+    padding: 8px;
+}
+
+div.bk-hbox div.bk-data-table {
+    padding: 20px;
+}
+</style>
+    
+<script src="https://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.js" type="text/javascript"></script>
+<script src="https://cdn.pydata.org/bokeh/release/bokeh-widgets-1.0.4.min.js" type="text/javascript"></script>
+<script src="https://cdn.pydata.org/bokeh/release/bokeh-tables-1.0.4.min.js" type="text/javascript"></script>
+<script src="https://cdn.pydata.org/bokeh/release/bokeh-gl-1.0.4.min.js" type="text/javascript"></script>
+<script src="https://code.jquery.com/jquery-2.1.4.min.js" type="text/javascript"></script>
+<script src="https://code.jquery.com/ui/1.10.4/jquery-ui.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js" type="text/javascript"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js" type="text/javascript"></script>
+<script type="text/javascript">function HoloViewsWidget() {
+}
+
+HoloViewsWidget.prototype.init_slider = function(init_val){
+  if(this.load_json) {
+    this.from_json()
+  } else {
+    this.update_cache();
+  }
+}
+
+HoloViewsWidget.prototype.populate_cache = function(idx){
+  this.cache[idx].innerHTML = this.frames[idx];
+  if (this.embed) {
+    delete this.frames[idx];
+  }
+}
+
+HoloViewsWidget.prototype.process_error = function(msg){
+}
+
+HoloViewsWidget.prototype.from_json = function() {
+  var data_url = this.json_path + this.id + '.json';
+  $.getJSON(data_url, $.proxy(function(json_data) {
+    this.frames = json_data;
+    this.update_cache();
+    this.update(0);
+  }, this));
+}
+
+HoloViewsWidget.prototype.dynamic_update = function(current){
+  if (current === undefined) {
+    return
+  }
+  this.current = current;
+  if (this.comm) {
+    var msg = {comm_id: this.id+'_client', content: current}
+    this.comm.send(msg);
+  }
+}
+
+HoloViewsWidget.prototype.update_cache = function(force){
+  var frame_len = Object.keys(this.frames).length;
+  for (var i=0; i<frame_len; i++) {
+    if(!this.load_json || this.dynamic)  {
+      var frame = Object.keys(this.frames)[i];
+    } else {
+      var frame = i;
+    }
+    if(!(frame in this.cache) || force) {
+      if ((frame in this.cache) && force) { this.cache[frame].remove() }
+      var div = document.createElement("div");
+      var parent = document.getElementById("_anim_img"+this.id);
+      div.style.display = "none";
+      parent.appendChild(div)
+      this.cache[frame] = div;
+      var cache_id = "_anim_img"+this.id+"_"+frame;
+      this.populate_cache(frame);
+    }
+  }
+}
+
+HoloViewsWidget.prototype.update = function(current){
+  if(current in this.cache) {
+    for (var index in this.cache) {
+      this.cache[index].style.display = "none";
+    }
+    this.cache[current].style.display = "";
+    this.wait = false;
+  }
+}
+
+HoloViewsWidget.prototype.init_comms = function() {
+  var that = this
+  HoloViews.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.msg_handler(msg) })
+  if (!this.cached || this.dynamic) {
+    function ack_callback(msg) {
+      var msg = msg.metadata;
+      var comm_id = msg.comm_id;
+      var comm_status = HoloViews.comm_status[comm_id];
+      if (that.queue.length > 0) {
+        that.time = Date.now();
+        that.dynamic_update(that.queue[that.queue.length-1]);
+        that.queue = [];
+      } else {
+        that.wait = false;
+      }
+      if ((msg.msg_type == "Ready") && msg.content) {
+        console.log("Python callback returned following output:", msg.content);
+      } else if (msg.msg_type == "Error") {
+        console.log("Python failed with the following traceback:", msg.traceback)
+      }
+    }
+    var comm = HoloViews.comm_manager.get_client_comm(this.plot_id, this.id+'_client', ack_callback);
+    return comm
+  }
+}
+
+HoloViewsWidget.prototype.msg_handler = function(msg) {
+  var metadata = msg.metadata;
+  if ((metadata.msg_type == "Ready")) {
+    if (metadata.content) {
+      console.log("Python callback returned following output:", metadata.content);
+    }
+	return;
+  } else if (metadata.msg_type == "Error") {
+    console.log("Python failed with the following traceback:", metadata.traceback)
+    return
+  }
+  this.process_msg(msg)
+}
+
+HoloViewsWidget.prototype.process_msg = function(msg) {
+}
+
+function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mode, cached, json_path, dynamic, plot_id){
+  this.frames = frames;
+  this.id = id;
+  this.plot_id = plot_id;
+  this.slider_ids = slider_ids;
+  this.keyMap = keyMap
+  this.current_frame = 0;
+  this.current_vals = dim_vals;
+  this.load_json = load_json;
+  this.mode = mode;
+  this.notFound = notFound;
+  this.cached = cached;
+  this.dynamic = dynamic;
+  this.cache = {};
+  this.json_path = json_path;
+  this.init_slider(this.current_vals[0]);
+  this.queue = [];
+  this.wait = false;
+  if (!this.cached || this.dynamic) {
+    this.comm = this.init_comms();
+  }
+}
+
+SelectionWidget.prototype = new HoloViewsWidget;
+
+
+SelectionWidget.prototype.get_key = function(current_vals) {
+  var key = "(";
+  for (var i=0; i<this.slider_ids.length; i++)
+  {
+    var val = this.current_vals[i];
+    if (!(typeof val === 'string')) {
+      if (val % 1 === 0) { val = val.toFixed(1); }
+      else { val = val.toFixed(10); val = val.slice(0, val.length-1);}
+    }
+    key += "'" + val + "'";
+    if(i != this.slider_ids.length-1) { key += ', ';}
+    else if(this.slider_ids.length == 1) { key += ',';}
+  }
+  key += ")";
+  return this.keyMap[key];
+}
+
+SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
+  this.current_vals[dim_idx] = dim_val;
+  var key = this.current_vals;
+  if (!this.dynamic) {
+    key = this.get_key(key)
+  }
+  if (this.dynamic || !this.cached) {
+    if ((this.time !== undefined) && ((this.wait) && ((this.time + 10000) > Date.now()))) {
+      this.queue.push(key);
+      return
+    }
+    this.queue = [];
+    this.time = Date.now();
+    this.current_frame = key;
+    this.wait = true;
+    this.dynamic_update(key)
+  } else if (key !== undefined) {
+    this.update(key)
+  }
+}
+
+
+/* Define the ScrubberWidget class */
+function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached, json_path, dynamic, plot_id){
+  this.slider_id = "_anim_slider" + id;
+  this.loop_select_id = "_anim_loop_select" + id;
+  this.id = id;
+  this.plot_id = plot_id;
+  this.interval = interval;
+  this.current_frame = 0;
+  this.direction = 0;
+  this.dynamic = dynamic;
+  this.timer = null;
+  this.load_json = load_json;
+  this.mode = mode;
+  this.cached = cached;
+  this.frames = frames;
+  this.cache = {};
+  this.length = num_frames;
+  this.json_path = json_path;
+  document.getElementById(this.slider_id).max = this.length - 1;
+  this.init_slider(0);
+  this.wait = false;
+  this.queue = [];
+  if (!this.cached || this.dynamic) {
+    this.comm = this.init_comms()
+  }
+}
+
+ScrubberWidget.prototype = new HoloViewsWidget;
+
+ScrubberWidget.prototype.set_frame = function(frame){
+  this.current_frame = frame;
+  var widget = document.getElementById(this.slider_id);
+  if (widget === null) {
+    this.pause_animation();
+    return
+  }
+  widget.value = this.current_frame;
+  if (this.dynamic || !this.cached) {
+    if ((this.time !== undefined) && ((this.wait) && ((this.time + 10000) > Date.now()))) {
+      this.queue.push(frame);
+      return
+    }
+    this.queue = [];
+    this.time = Date.now();
+    this.wait = true;
+    this.dynamic_update(frame)
+  } else {
+    this.update(frame)
+  }
+}
+
+ScrubberWidget.prototype.get_loop_state = function(){
+  var button_group = document[this.loop_select_id].state;
+  for (var i = 0; i < button_group.length; i++) {
+    var button = button_group[i];
+    if (button.checked) {
+      return button.value;
+    }
+  }
+  return undefined;
+}
+
+
+ScrubberWidget.prototype.next_frame = function() {
+  this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
+}
+
+ScrubberWidget.prototype.previous_frame = function() {
+  this.set_frame(Math.max(0, this.current_frame - 1));
+}
+
+ScrubberWidget.prototype.first_frame = function() {
+  this.set_frame(0);
+}
+
+ScrubberWidget.prototype.last_frame = function() {
+  this.set_frame(this.length - 1);
+}
+
+ScrubberWidget.prototype.slower = function() {
+  this.interval /= 0.7;
+  if(this.direction > 0){this.play_animation();}
+  else if(this.direction < 0){this.reverse_animation();}
+}
+
+ScrubberWidget.prototype.faster = function() {
+  this.interval *= 0.7;
+  if(this.direction > 0){this.play_animation();}
+  else if(this.direction < 0){this.reverse_animation();}
+}
+
+ScrubberWidget.prototype.anim_step_forward = function() {
+  if(this.current_frame < this.length - 1){
+    this.next_frame();
+  }else{
+    var loop_state = this.get_loop_state();
+    if(loop_state == "loop"){
+      this.first_frame();
+    }else if(loop_state == "reflect"){
+      this.last_frame();
+      this.reverse_animation();
+    }else{
+      this.pause_animation();
+      this.last_frame();
+    }
+  }
+}
+
+ScrubberWidget.prototype.anim_step_reverse = function() {
+  if(this.current_frame > 0){
+    this.previous_frame();
+  } else {
+    var loop_state = this.get_loop_state();
+    if(loop_state == "loop"){
+      this.last_frame();
+    }else if(loop_state == "reflect"){
+      this.first_frame();
+      this.play_animation();
+    }else{
+      this.pause_animation();
+      this.first_frame();
+    }
+  }
+}
+
+ScrubberWidget.prototype.pause_animation = function() {
+  this.direction = 0;
+  if (this.timer){
+    clearInterval(this.timer);
+    this.timer = null;
+  }
+}
+
+ScrubberWidget.prototype.play_animation = function() {
+  this.pause_animation();
+  this.direction = 1;
+  var t = this;
+  if (!this.timer) this.timer = setInterval(function(){t.anim_step_forward();}, this.interval);
+}
+
+ScrubberWidget.prototype.reverse_animation = function() {
+  this.pause_animation();
+  this.direction = -1;
+  var t = this;
+  if (!this.timer) this.timer = setInterval(function(){t.anim_step_reverse();}, this.interval);
+}
+
+function extend(destination, source) {
+  for (var k in source) {
+    if (source.hasOwnProperty(k)) {
+      destination[k] = source[k];
+    }
+  }
+  return destination;
+}
+
+function update_widget(widget, values) {
+  if (widget.hasClass("ui-slider")) {
+    widget.slider('option', {
+      min: 0,
+      max: values.length-1,
+      dim_vals: values,
+      value: 0,
+      dim_labels: values
+    })
+    widget.slider('option', 'slide').call(widget, event, {value: 0})
+  } else {
+    widget.empty();
+    for (var i=0; i<values.length; i++){
+      widget.append($("<option>", {
+        value: i,
+        text: values[i]
+      }))
+    };
+    widget.data('values', values);
+    widget.data('value', 0);
+    widget.trigger("change");
+  };
+}
+
+function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step, value, next_dim,
+                     dim_idx, delay, jQueryUI_CDN, UNDERSCORE_CDN) {
+  // Slider JS Block START
+  function loadcssfile(filename){
+    var fileref=document.createElement("link")
+    fileref.setAttribute("rel", "stylesheet")
+    fileref.setAttribute("type", "text/css")
+    fileref.setAttribute("href", filename)
+    document.getElementsByTagName("head")[0].appendChild(fileref)
+  }
+  loadcssfile("https://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css");
+  /* Check if jQuery and jQueryUI have been loaded
+     otherwise load with require.js */
+  var jQuery = window.jQuery,
+    // check for old versions of jQuery
+    oldjQuery = jQuery && !!jQuery.fn.jquery.match(/^1\.[0-4](\.|$)/),
+    jquery_path = '',
+    paths = {},
+    noConflict;
+  var jQueryUI = jQuery.ui;
+  // check for jQuery
+  if (!jQuery || oldjQuery) {
+    // load if it's not available or doesn't meet min standards
+    paths.jQuery = jQuery;
+    noConflict = !!oldjQuery;
+  } else {
+    // register the current jQuery
+    define('jquery', [], function() { return jQuery; });
+  }
+  if (!jQueryUI) {
+    paths.jQueryUI = jQueryUI_CDN.slice(null, -3);
+  } else {
+    define('jQueryUI', [], function() { return jQuery.ui; });
+  }
+  paths.underscore = UNDERSCORE_CDN.slice(null, -3);
+  var jquery_require = {
+    paths: paths,
+    shim: {
+      "jQueryUI": {
+        exports:"$",
+        deps: ['jquery']
+      },
+      "underscore": {
+        exports: '_'
+      }
+    }
+  }
+  require.config(jquery_require);
+  require(["jQueryUI", "underscore"], function(jUI, _){
+    if (noConflict) $.noConflict(true);
+    var vals = values;
+    if (dynamic && vals.constructor === Array) {
+      var default_value = parseFloat(value);
+      var min = parseFloat(vals[0]);
+      var max = parseFloat(vals[vals.length-1]);
+      var wstep = step;
+      var wlabels = [default_value];
+      var init_label = default_value;
+    } else {
+      var min = 0;
+      if (dynamic) {
+        var max = Object.keys(vals).length - 1;
+        var init_label = labels[value];
+        var default_value = values[value];
+      } else {
+        var max = vals.length - 1;
+        var init_label = labels[value];
+        var default_value = value;
+      }
+      var wstep = 1;
+      var wlabels = labels;
+    }
+    function adjustFontSize(text) {
+      var width_ratio = (text.parent().width()/8)/text.val().length;
+      var size = Math.min(0.9, Math.max(0.6, width_ratio))+'em';
+      text.css('font-size', size);
+    }
+    var slider = $('#_anim_widget'+id+'_'+dim);
+    slider.slider({
+      animate: "fast",
+      min: min,
+      max: max,
+      step: wstep,
+      value: default_value,
+      dim_vals: vals,
+      dim_labels: wlabels,
+      next_vals: next_vals,
+      slide: function(event, ui) {
+        var vals = slider.slider("option", "dim_vals");
+        var next_vals = slider.slider("option", "next_vals");
+        var dlabels = slider.slider("option", "dim_labels");
+        if (dynamic) {
+          var dim_val = ui.value;
+          if (vals.constructor === Array) {
+            var label = ui.value;
+          } else {
+            var label = dlabels[ui.value];
+          }
+        } else {
+          var dim_val = vals[ui.value];
+          var label = dlabels[ui.value];
+        }
+        var text = $('#textInput'+id+'_'+dim);
+        text.val(label);
+        adjustFontSize(text);
+        HoloViews.index[plot_id].set_frame(dim_val, dim_idx);
+        if (Object.keys(next_vals).length > 0) {
+          var new_vals = next_vals[dim_val];
+          var next_widget = $('#_anim_widget'+id+'_'+next_dim);
+          update_widget(next_widget, new_vals);
+        }
+      }
+    });
+    slider.keypress(function(event) {
+      if (event.which == 80 || event.which == 112) {
+        var start = slider.slider("option", "value");
+        var stop =  slider.slider("option", "max");
+        for (var i=start; i<=stop; i++) {
+          var delay = i*delay;
+          $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
+            var val = {value:i};
+            slider.slider('value',i);
+            slider.slider("option", "slide")(null, val);
+          }, slider), delay);}, slider)(i);
+        }
+      }
+      if (event.which == 82 || event.which == 114) {
+        var start = slider.slider("option", "value");
+        var stop =  slider.slider("option", "min");
+        var count = 0;
+        for (var i=start; i>=stop; i--) {
+          var delay = count*delay;
+          count = count + 1;
+          $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
+            var val = {value:i};
+            slider.slider('value',i);
+            slider.slider("option", "slide")(null, val);
+          }, slider), delay);}, slider)(i);
+        }
+      }
+    });
+    var textInput = $('#textInput'+id+'_'+dim)
+    textInput.val(init_label);
+    adjustFontSize(textInput);
+  });
+}
+
+function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_dim, dim_idx, dynamic) {
+  var widget = $("#_anim_widget"+id+'_'+dim);
+  widget.data('values', vals)
+  for (var i=0; i<vals.length; i++){
+    if (dynamic) {
+      var val = vals[i];
+    } else {
+      var val = i;
+    }
+    widget.append($("<option>", {
+      value: val,
+      text: labels[i]
+    }));
+  };
+  widget.data("next_vals", next_vals);
+  widget.val(value);
+  widget.on('change', function(event, ui) {
+    if (dynamic) {
+      var dim_val = parseInt(this.value);
+    } else {
+      var dim_val = $.data(this, 'values')[this.value];
+    }
+    var next_vals = $.data(this, "next_vals");
+    if (Object.keys(next_vals).length > 0) {
+      var new_vals = next_vals[dim_val];
+      var next_widget = $('#_anim_widget'+id+'_'+next_dim);
+      update_widget(next_widget, new_vals);
+    }
+    var widgets = HoloViews.index[plot_id]
+    if (widgets) {
+      widgets.set_frame(dim_val, dim_idx);
+    }
+  });
+}
+
+
+if (window.HoloViews === undefined) {
+  window.HoloViews = {}
+  window.PyViz = window.HoloViews
+} else if (window.PyViz === undefined) {
+  window.PyViz = window.HoloViews
+}
+
+
+var _namespace = {
+  init_slider: init_slider,
+  init_dropdown: init_dropdown,
+  comms: {},
+  comm_status: {},
+  index: {},
+  plot_index: {},
+  kernels: {},
+  receivers: {}
+}
+
+for (var k in _namespace) {
+  if (!(k in window.HoloViews)) {
+    window.HoloViews[k] = _namespace[k];
+  }
+}
+
+// Define MPL specific subclasses
+function MPLSelectionWidget() {
+  SelectionWidget.apply(this, arguments);
+}
+
+function MPLScrubberWidget() {
+  ScrubberWidget.apply(this, arguments);
+}
+
+// Let them inherit from the baseclasses
+MPLSelectionWidget.prototype = Object.create(SelectionWidget.prototype);
+MPLScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
+
+// Define methods to override on widgets
+var MPLMethods = {
+  init_slider : function(init_val){
+    if(this.load_json) {
+      this.from_json()
+    } else {
+      this.update_cache();
+    }
+    if (this.dynamic | !this.cached | (this.current_vals === undefined)) {
+      this.update(0)
+    } else {
+      this.set_frame(this.current_vals[0], 0)
+    }
+  },
+  process_msg : function(msg) {
+    var data = msg.content.data;
+    this.frames[this.current] = data;
+    this.update_cache(true);
+    this.update(this.current);
+  }
+}
+// Extend MPL widgets with backend specific methods
+extend(MPLSelectionWidget.prototype, MPLMethods);
+extend(MPLScrubberWidget.prototype, MPLMethods);
+
+window.HoloViews.MPLSelectionWidget = MPLSelectionWidget
+window.HoloViews.MPLScrubberWidget = MPLScrubberWidget
+
+// Define Bokeh specific subclasses
+function BokehSelectionWidget() {
+  SelectionWidget.apply(this, arguments);
+}
+
+function BokehScrubberWidget() {
+  ScrubberWidget.apply(this, arguments);
+}
+
+// Let them inherit from the baseclasses
+BokehSelectionWidget.prototype = Object.create(SelectionWidget.prototype);
+BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
+
+// Define methods to override on widgets
+var BokehMethods = {
+  update_cache : function(){
+    for (var index in this.frames) {
+      this.frames[index] = JSON.parse(this.frames[index]);
+    }
+  },
+  update : function(current){
+    if (current === undefined) {
+      return;
+    }
+    var data = this.frames[current];
+    if (data !== undefined) {
+      if (data.root in HoloViews.plot_index) {
+        var doc = HoloViews.plot_index[data.root].model.document;
+      } else {
+        var doc = Bokeh.index[data.root].model.document;
+      }
+      doc.apply_json_patch(data.content);
+    }
+  },
+  init_comms: function() {
+    if (Bokeh.protocol !== undefined) {
+      this.receiver = new Bokeh.protocol.Receiver()
+    } else {
+      this.receiver = null;
+    }
+    return HoloViewsWidget.prototype.init_comms.call(this);
+  },
+  process_msg : function(msg) {
+    if (this.plot_id in HoloViews.plot_index) {
+      var doc = HoloViews.plot_index[this.plot_id].model.document;
+    } else {
+      var doc = Bokeh.index[this.plot_id].model.document;
+    }
+    if (this.receiver === null) { return }
+    var receiver = this.receiver;
+    if (msg.buffers.length > 0) {
+      receiver.consume(msg.buffers[0].buffer)
+    } else {
+      receiver.consume(msg.content.data)
+    }
+    const comm_msg = receiver.message;
+    if ((comm_msg != null) && (doc != null)) {
+      doc.apply_json_patch(comm_msg.content, comm_msg.buffers)
+    }
+  }
+}
+
+// Extend Bokeh widgets with backend specific methods
+extend(BokehSelectionWidget.prototype, BokehMethods);
+extend(BokehScrubberWidget.prototype, BokehMethods);
+
+window.HoloViews.BokehSelectionWidget = BokehSelectionWidget
+window.HoloViews.BokehScrubberWidget = BokehScrubberWidget
+</script>
+<script type="text/javascript">
+    function JupyterCommManager() {
+    }
+
+    JupyterCommManager.prototype.register_target = function(plot_id, comm_id, msg_handler) {
+      if (window.comm_manager || ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {
+        var comm_manager = window.comm_manager || Jupyter.notebook.kernel.comm_manager;
+        comm_manager.register_target(comm_id, function(comm) {
+          comm.on_msg(msg_handler);
+        });
+      } else if ((plot_id in window.PyViz.kernels) && (window.PyViz.kernels[plot_id])) {
+        window.PyViz.kernels[plot_id].registerCommTarget(comm_id, function(comm) {
+          comm.onMsg = msg_handler;
+        });
+      }
+    }
+
+    JupyterCommManager.prototype.get_client_comm = function(plot_id, comm_id, msg_handler) {
+      if (comm_id in window.PyViz.comms) {
+        return window.PyViz.comms[comm_id];
+      } else if (window.comm_manager || ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {
+        var comm_manager = window.comm_manager || Jupyter.notebook.kernel.comm_manager;
+        var comm = comm_manager.new_comm(comm_id, {}, {}, {}, comm_id);
+        if (msg_handler) {
+          comm.on_msg(msg_handler);
+        }
+      } else if ((plot_id in window.PyViz.kernels) && (window.PyViz.kernels[plot_id])) {
+        var comm = window.PyViz.kernels[plot_id].connectToComm(comm_id);
+        comm.open();
+        if (msg_handler) {
+          comm.onMsg = msg_handler;
+        }
+      }
+
+      window.PyViz.comms[comm_id] = comm;
+      return comm;
+    }
+
+    window.PyViz.comm_manager = new JupyterCommManager();
+    </script>
+  </head>
+  <body>
+    <div class="animation" align="center">
+    <div id="_anim_img0948e6144e8944c48fb12ccb658364df">
+        
+            <div id='96005' style='display: table; margin: 0 auto;'>
+
+
+
+
+
+  <div class="bk-root" id="e872a298-062e-4c8d-9699-1c7ae922d143" data-root-id="96005"></div>
+</div>
+        
+    </div>
+    <br>
+    <input id="_anim_slider0948e6144e8944c48fb12ccb658364df" type="range" style="width:350px" name="points" min="0" max="1" step="1" value="0" oninput="HoloViews.index['96005'].set_frame(parseInt(this.value));"></input>
+    <br>
+    <button onclick="HoloViews.index['96005'].slower()" style="text-align: center">&#8211;</button>
+    <button onclick="HoloViews.index['96005'].first_frame()" style="text-align: center; min-width: 40px">&#9616;&#9664;&#9664;</button>
+    <button onclick="HoloViews.index['96005'].previous_frame()" style="text-align: center; min-width: 40px">&#9616;&#9664;</button>
+    <button onclick="HoloViews.index['96005'].reverse_animation()" style="text-align: center; min-width: 40px">&#9664;</button>
+    <button onclick="HoloViews.index['96005'].pause_animation()" style="text-align: center; min-width: 40px">&#9616;&nbsp;&#9612;</button>
+    <button onclick="HoloViews.index['96005'].play_animation()" style="text-align: center; min-width: 40px">&#9654;</button>
+    <button onclick="HoloViews.index['96005'].next_frame()" style="text-align: center; min-width: 40px">&#9654;&#9612;</button>
+    <button onclick="HoloViews.index['96005'].last_frame()" style="text-align: center; min-width: 40px">&#9654;&#9654;&#9612;</button>
+    <button onclick="HoloViews.index['96005'].faster()" style="text-align: center">+</button>
+    <form action="#n" name="_anim_loop_select0948e6144e8944c48fb12ccb658364df" class="anim_control">
+        <input type="radio" name="state" value="once" {once_checked}> Once </input>
+        <input type="radio" name="state" value="loop" {loop_checked}> Loop </input>
+        <input type="radio" name="state" value="reflect" {reflect_checked}> Reflect </input>
+    </form>
+</div>
+<script type="text/javascript">/* Instantiate the BokehScrubberWidget class. */
+/* The IDs given should match those used in the template above. */
+function create_widget() {
+  var frame_data = {"0": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/10/2162 19:51\",\"1/10/2162 23:39\",\"1/11/2162 10:22\",\"1/11/2162 10:30\",\"1/11/2162 11:43\",\"1/11/2162 15:22\",\"1/11/2162 21:06\",\"1/11/2162 3:10\",\"1/11/2162 6:10\",\"1/12/2162 10:20\",\"1/12/2162 17:18\",\"1/12/2162 22:00\",\"1/12/2162 3:00\",\"1/12/2162 3:21\",\"1/13/2162 10:02\",\"1/13/2162 10:30\",\"1/13/2162 14:00\",\"1/13/2162 15:35\",\"1/13/2162 16:00\",\"1/13/2162 19:00\",\"1/13/2162 20:00\",\"1/13/2162 22:35\",\"1/13/2162 3:13\",\"1/14/2162 0:00\",\"1/14/2162 12:00\",\"1/14/2162 16:00\",\"1/14/2162 18:00\",\"1/14/2162 19:00\",\"1/14/2162 20:00\",\"1/14/2162 22:38\",\"1/14/2162 2:00\",\"1/14/2162 4:00\",\"1/14/2162 5:00\",\"1/14/2162 7:00\",\"1/14/2162 7:30\",\"1/14/2162 9:00\",\"1/15/2162 10:03\",\"1/15/2162 11:55\",\"1/15/2162 16:27\",\"1/15/2162 21:09\",\"1/15/2162 2:00\",\"1/15/2162 4:15\",\"1/15/2162 6:00\",\"1/16/2162 10:00\",\"1/16/2162 3:12\",\"1/16/2162 9:57\",\"12/10/2161 10:00\",\"12/10/2161 10:34\",\"12/10/2161 16:00\",\"12/10/2161 18:40\",\"12/10/2161 2:09\",\"12/11/2161 10:00\",\"12/11/2161 14:26\",\"12/11/2161 16:00\",\"12/11/2161 1:18\",\"12/11/2161 20:00\",\"12/11/2161 23:26\",\"12/12/2161 10:01\",\"12/12/2161 16:03\",\"12/12/2161 16:21\",\"12/12/2161 22:09\",\"12/12/2161 22:15\",\"12/12/2161 2:56\",\"12/12/2161 5:10\",\"12/12/2161 9:33\",\"12/13/2161 10:14\",\"12/13/2161 16:33\",\"12/13/2161 22:03\",\"12/13/2161 22:46\",\"12/13/2161 4:22\",\"12/13/2161 4:28\",\"12/14/2161 10:00\",\"12/14/2161 14:54\",\"12/14/2161 16:00\",\"12/14/2161 22:10\",\"12/14/2161 2:42\",\"12/14/2161 3:03\",\"12/15/2161 10:00\",\"12/15/2161 10:08\",\"12/15/2161 14:57\",\"12/15/2161 1:59\",\"12/15/2161 22:00\",\"12/16/2161 10:26\",\"12/16/2161 14:18\",\"12/16/2161 17:00\",\"12/16/2161 22:00\",\"12/16/2161 2:24\",\"12/16/2161 2:34\",\"12/16/2161 4:00\",\"12/16/2161 9:40\",\"12/17/2161 10:00\",\"12/17/2161 15:00\",\"12/17/2161 18:00\",\"12/17/2161 2:01\",\"12/9/2161 17:01\",\"12/9/2161 18:08\",\"12/9/2161 22:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 132401\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/10/2162 19:51\",\"1/10/2162 23:39\",\"1/11/2162 10:22\",\"1/11/2162 10:30\",\"1/11/2162 11:43\",\"1/11/2162 15:22\",\"1/11/2162 21:06\",\"1/11/2162 3:10\",\"1/11/2162 6:10\",\"1/12/2162 10:20\",\"1/12/2162 17:18\",\"1/12/2162 22:00\",\"1/12/2162 3:00\",\"1/12/2162 3:21\",\"1/13/2162 10:02\",\"1/13/2162 10:30\",\"1/13/2162 14:00\",\"1/13/2162 15:35\",\"1/13/2162 16:00\",\"1/13/2162 19:00\",\"1/13/2162 20:00\",\"1/13/2162 22:35\",\"1/13/2162 3:13\",\"1/14/2162 0:00\",\"1/14/2162 12:00\",\"1/14/2162 16:00\",\"1/14/2162 18:00\",\"1/14/2162 19:00\",\"1/14/2162 20:00\",\"1/14/2162 22:38\",\"1/14/2162 2:00\",\"1/14/2162 4:00\",\"1/14/2162 5:00\",\"1/14/2162 7:00\",\"1/14/2162 7:30\",\"1/14/2162 9:00\",\"1/15/2162 10:03\",\"1/15/2162 10:03\",\"1/15/2162 11:55\",\"1/15/2162 16:27\",\"1/15/2162 21:09\",\"1/15/2162 2:00\",\"1/15/2162 4:15\",\"1/15/2162 6:00\",\"1/16/2162 10:00\",\"1/16/2162 3:12\",\"1/16/2162 9:57\",\"12/10/2161 10:00\",\"12/10/2161 10:34\",\"12/10/2161 16:00\",\"12/10/2161 18:40\",\"12/10/2161 2:09\",\"12/11/2161 10:00\",\"12/11/2161 14:26\",\"12/11/2161 16:00\",\"12/11/2161 1:18\",\"12/11/2161 20:00\",\"12/11/2161 23:26\",\"12/12/2161 10:01\",\"12/12/2161 16:03\",\"12/12/2161 16:21\",\"12/12/2161 22:09\",\"12/12/2161 22:15\",\"12/12/2161 2:56\",\"12/12/2161 5:10\",\"12/12/2161 9:33\",\"12/13/2161 10:14\",\"12/13/2161 16:33\",\"12/13/2161 22:03\",\"12/13/2161 22:46\",\"12/13/2161 4:22\",\"12/13/2161 4:28\",\"12/14/2161 10:00\",\"12/14/2161 14:54\",\"12/14/2161 16:00\",\"12/14/2161 22:10\",\"12/14/2161 2:42\",\"12/14/2161 3:03\",\"12/15/2161 10:00\",\"12/15/2161 10:08\",\"12/15/2161 14:57\",\"12/15/2161 1:59\",\"12/15/2161 22:00\",\"12/16/2161 10:26\",\"12/16/2161 14:18\",\"12/16/2161 17:00\",\"12/16/2161 22:00\",\"12/16/2161 2:24\",\"12/16/2161 2:34\",\"12/16/2161 4:00\",\"12/16/2161 9:40\",\"12/17/2161 10:00\",\"12/17/2161 15:00\",\"12/17/2161 18:00\",\"12/17/2161 2:01\",\"12/9/2161 17:01\",\"12/9/2161 18:08\",\"12/9/2161 22:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADgaEAAAAAAAEBkQAAAAAAAAGBAAAAAAABAXkAAAAAAAMBeQAAAAAAAgF9AAAAAAADAYEAAAAAAAEBcQAAAAAAAwF5AAAAAAADAWUAAAAAAAABXQAAAAAAAIGBAAAAAAACAW0AAAAAAAMBbQAAAAAAAQGBAAAAAAADgZEAAAAAAACBgQAAAAAAAgFZAAAAAAAAAYkAAAAAAAABiQAAAAAAAgFNAAAAAAAAATkAAAAAAAABZQAAAAAAAAFRAAAAAAADAWkAAAAAAAMBSQAAAAAAAAE9AAAAAAADAXUAAAAAAAMBTQAAAAAAAQFlAAAAAAAAARkAAAAAAAABXQAAAAAAAwFFAAAAAAADAVkAAAAAAAABPQAAAAAAAgFRAAAAAAABAZkAAAAAAAIBdQAAAAAAAwFpAAAAAAABAWEAAAAAAAABZQAAAAAAAAGJAAAAAAADAVUAAAAAAAMBbQAAAAAAAgFtAAAAAAADAUkAAAAAAAEBXQAAAAAAAYGRAAAAAAABAWUAAAAAAAIBdQAAAAAAAwFxAAAAAAADAWkAAAAAAAOBiQAAAAAAA4GNAAAAAAABAWkAAAAAAAGBgQAAAAAAAQGVAAAAAAAAAXkAAAAAAAABdQAAAAAAAAGBAAAAAAABgYEAAAAAAAKBgQAAAAAAAYGBAAAAAAADAXEAAAAAAAMBcQAAAAAAAQF5AAAAAAADAYEAAAAAAAEBgQAAAAAAAwGJAAAAAAACAYkAAAAAAAABfQAAAAAAAwF5AAAAAAACAZ0AAAAAAAMBiQAAAAAAAAGlAAAAAAAAAZUAAAAAAAGBiQAAAAAAAwGFAAAAAAAAAZUAAAAAAAIBfQAAAAAAAwGRAAAAAAABAZEAAAAAAAJBwQAAAAAAAoGxAAAAAAADgb0AAAAAAAGByQAAAAAAAsHFAAAAAAADAaUAAAAAAAABpQAAAAAAAcHBAAAAAAABgbkAAAAAAANBzQAAAAAAAYHFAAAAAAAAga0AAAAAAAGBjQAAAAAAAAGFAAAAAAACAXEAAAAAAAMBaQA==\",\"dtype\":\"float64\",\"shape\":[98]}}},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/10/2162 19:51\",\"1/10/2162 23:39\",\"1/11/2162 10:22\",\"1/11/2162 10:30\",\"1/11/2162 11:43\",\"1/11/2162 15:22\",\"1/11/2162 21:06\",\"1/11/2162 3:10\",\"1/11/2162 6:10\",\"1/12/2162 10:20\",\"1/12/2162 17:18\",\"1/12/2162 22:00\",\"1/12/2162 3:00\",\"1/12/2162 3:21\",\"1/13/2162 10:02\",\"1/13/2162 10:30\",\"1/13/2162 14:00\",\"1/13/2162 15:35\",\"1/13/2162 16:00\",\"1/13/2162 19:00\",\"1/13/2162 20:00\",\"1/13/2162 22:35\",\"1/13/2162 3:13\",\"1/14/2162 0:00\",\"1/14/2162 12:00\",\"1/14/2162 16:00\",\"1/14/2162 18:00\",\"1/14/2162 19:00\",\"1/14/2162 20:00\",\"1/14/2162 22:38\",\"1/14/2162 2:00\",\"1/14/2162 4:00\",\"1/14/2162 5:00\",\"1/14/2162 7:00\",\"1/14/2162 7:30\",\"1/14/2162 9:00\",\"1/15/2162 10:03\",\"1/15/2162 10:03\",\"1/15/2162 11:55\",\"1/15/2162 16:27\",\"1/15/2162 21:09\",\"1/15/2162 2:00\",\"1/15/2162 4:15\",\"1/15/2162 6:00\",\"1/16/2162 10:00\",\"1/16/2162 3:12\",\"1/16/2162 9:57\",\"12/10/2161 10:00\",\"12/10/2161 10:34\",\"12/10/2161 16:00\",\"12/10/2161 18:40\",\"12/10/2161 2:09\",\"12/11/2161 10:00\",\"12/11/2161 14:26\",\"12/11/2161 16:00\",\"12/11/2161 1:18\",\"12/11/2161 20:00\",\"12/11/2161 23:26\",\"12/12/2161 10:01\",\"12/12/2161 16:03\",\"12/12/2161 16:21\",\"12/12/2161 22:09\",\"12/12/2161 22:15\",\"12/12/2161 2:56\",\"12/12/2161 5:10\",\"12/12/2161 9:33\",\"12/13/2161 10:14\",\"12/13/2161 16:33\",\"12/13/2161 22:03\",\"12/13/2161 22:46\",\"12/13/2161 4:22\",\"12/13/2161 4:28\",\"12/14/2161 10:00\",\"12/14/2161 14:54\",\"12/14/2161 16:00\",\"12/14/2161 22:10\",\"12/14/2161 2:42\",\"12/14/2161 3:03\",\"12/15/2161 10:00\",\"12/15/2161 10:08\",\"12/15/2161 14:57\",\"12/15/2161 1:59\",\"12/15/2161 22:00\",\"12/16/2161 10:26\",\"12/16/2161 14:18\",\"12/16/2161 17:00\",\"12/16/2161 22:00\",\"12/16/2161 2:24\",\"12/16/2161 2:34\",\"12/16/2161 4:00\",\"12/16/2161 9:40\",\"12/17/2161 10:00\",\"12/17/2161 15:00\",\"12/17/2161 18:00\",\"12/17/2161 2:01\",\"12/9/2161 17:01\",\"12/9/2161 18:08\",\"12/9/2161 22:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADgaEAAAAAAAEBkQAAAAAAAAGBAAAAAAABAXkAAAAAAAMBeQAAAAAAAgF9AAAAAAADAYEAAAAAAAEBcQAAAAAAAwF5AAAAAAADAWUAAAAAAAABXQAAAAAAAIGBAAAAAAACAW0AAAAAAAMBbQAAAAAAAQGBAAAAAAADgZEAAAAAAACBgQAAAAAAAgFZAAAAAAAAAYkAAAAAAAABiQAAAAAAAgFNAAAAAAAAATkAAAAAAAABZQAAAAAAAAFRAAAAAAADAWkAAAAAAAMBSQAAAAAAAAE9AAAAAAADAXUAAAAAAAMBTQAAAAAAAQFlAAAAAAAAARkAAAAAAAABXQAAAAAAAwFFAAAAAAADAVkAAAAAAAABPQAAAAAAAgFRAAAAAAABAZkAAAAAAAIBdQAAAAAAAwFpAAAAAAABAWEAAAAAAAABZQAAAAAAAAGJAAAAAAADAVUAAAAAAAMBbQAAAAAAAgFtAAAAAAADAUkAAAAAAAEBXQAAAAAAAYGRAAAAAAABAWUAAAAAAAIBdQAAAAAAAwFxAAAAAAADAWkAAAAAAAOBiQAAAAAAA4GNAAAAAAABAWkAAAAAAAGBgQAAAAAAAQGVAAAAAAAAAXkAAAAAAAABdQAAAAAAAAGBAAAAAAABgYEAAAAAAAKBgQAAAAAAAYGBAAAAAAADAXEAAAAAAAMBcQAAAAAAAQF5AAAAAAADAYEAAAAAAAEBgQAAAAAAAwGJAAAAAAACAYkAAAAAAAABfQAAAAAAAwF5AAAAAAACAZ0AAAAAAAMBiQAAAAAAAAGlAAAAAAAAAZUAAAAAAAGBiQAAAAAAAwGFAAAAAAAAAZUAAAAAAAIBfQAAAAAAAwGRAAAAAAABAZEAAAAAAAJBwQAAAAAAAoGxAAAAAAADgb0AAAAAAAGByQAAAAAAAsHFAAAAAAADAaUAAAAAAAABpQAAAAAAAcHBAAAAAAABgbkAAAAAAANBzQAAAAAAAYHFAAAAAAAAga0AAAAAAAGBjQAAAAAAAAGFAAAAAAACAXEAAAAAAAMBaQA==\",\"dtype\":\"float64\",\"shape\":[98]}}}],\"references\":[]},\"root\":\"96005\"}", "1": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/10/2169 23:27\",\"1/11/2169 22:46\",\"1/11/2169 5:22\",\"1/12/2169 4:15\",\"1/13/2169 20:37\",\"1/13/2169 4:01\",\"1/14/2169 16:00\",\"1/14/2169 22:01\",\"1/14/2169 4:00\",\"1/14/2169 9:52\",\"1/15/2169 10:15\",\"1/15/2169 16:00\",\"1/15/2169 22:01\",\"1/15/2169 4:02\",\"1/16/2169 10:34\",\"1/16/2169 4:00\",\"1/17/2169 4:20\",\"1/18/2169 3:42\",\"1/19/2169 5:20\",\"1/20/2169 3:30\",\"1/21/2169 2:54\",\"1/22/2169 5:11\",\"1/23/2169 16:34\",\"1/23/2169 3:29\",\"1/24/2169 3:53\",\"1/25/2169 17:10\",\"1/25/2169 4:25\",\"1/26/2169 4:07\",\"1/27/2169 18:20\",\"1/27/2169 2:05\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 188386\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/10/2169 23:27\",\"1/11/2169 22:46\",\"1/11/2169 5:22\",\"1/12/2169 4:15\",\"1/13/2169 20:37\",\"1/13/2169 4:01\",\"1/14/2169 16:00\",\"1/14/2169 22:01\",\"1/14/2169 4:00\",\"1/14/2169 9:52\",\"1/15/2169 10:15\",\"1/15/2169 16:00\",\"1/15/2169 22:01\",\"1/15/2169 4:02\",\"1/16/2169 10:34\",\"1/16/2169 4:00\",\"1/17/2169 4:20\",\"1/18/2169 3:42\",\"1/19/2169 5:20\",\"1/20/2169 3:30\",\"1/21/2169 2:54\",\"1/22/2169 5:11\",\"1/23/2169 16:34\",\"1/23/2169 3:29\",\"1/24/2169 3:53\",\"1/25/2169 17:10\",\"1/25/2169 4:25\",\"1/26/2169 4:07\",\"1/27/2169 18:20\",\"1/27/2169 2:05\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACga0AAAAAAACBsQAAAAAAA4GVAAAAAAAAQcEAAAAAAAOBhQAAAAAAAAHBAAAAAAAAgZkAAAAAAAMBnQAAAAAAAgGlAAAAAAADQcEAAAAAAANB1QAAAAAAAwGlAAAAAAADgZ0AAAAAAAABsQAAAAAAA4GlAAAAAAABgZ0AAAAAAAMBiQAAAAAAA4GNAAAAAAABAZEAAAAAAAMBbQAAAAAAAYGZAAAAAAACgYUAAAAAAAABmQAAAAAAAAGNAAAAAAABgY0AAAAAAACBkQAAAAAAAgGZAAAAAAACgY0AAAAAAAOBkQAAAAAAAgHBA\",\"dtype\":\"float64\",\"shape\":[30]}}}],\"references\":[]},\"root\":\"96005\"}", "2": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/10/2190 12:17\",\"1/10/2190 13:09\",\"1/10/2190 14:06\",\"1/10/2190 15:00\",\"1/10/2190 15:40\",\"1/10/2190 16:12\",\"1/10/2190 17:07\",\"1/10/2190 17:58\",\"1/10/2190 19:23\",\"1/10/2190 21:00\",\"1/10/2190 23:18\",\"1/10/2190 9:17\",\"1/11/2190 0:19\",\"1/11/2190 15:23\",\"1/11/2190 18:28\",\"1/11/2190 1:44\",\"1/11/2190 22:16\",\"1/11/2190 3:06\",\"1/11/2190 6:26\",\"1/11/2190 9:38\",\"1/12/2190 10:00\",\"1/12/2190 11:34\",\"1/12/2190 12:14\",\"1/12/2190 13:52\",\"1/12/2190 15:00\",\"1/12/2190 16:16\",\"1/12/2190 19:04\",\"1/12/2190 1:13\",\"1/12/2190 4:57\",\"1/12/2190 8:00\",\"1/12/2190 9:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 111143\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/10/2190 12:17\",\"1/10/2190 13:09\",\"1/10/2190 14:06\",\"1/10/2190 15:00\",\"1/10/2190 15:40\",\"1/10/2190 16:12\",\"1/10/2190 17:07\",\"1/10/2190 17:58\",\"1/10/2190 19:23\",\"1/10/2190 21:00\",\"1/10/2190 23:18\",\"1/10/2190 9:17\",\"1/11/2190 0:19\",\"1/11/2190 15:23\",\"1/11/2190 18:28\",\"1/11/2190 1:44\",\"1/11/2190 22:16\",\"1/11/2190 3:06\",\"1/11/2190 6:26\",\"1/11/2190 9:38\",\"1/12/2190 10:00\",\"1/12/2190 11:34\",\"1/12/2190 12:14\",\"1/12/2190 13:52\",\"1/12/2190 15:00\",\"1/12/2190 16:16\",\"1/12/2190 19:04\",\"1/12/2190 1:13\",\"1/12/2190 4:57\",\"1/12/2190 8:00\",\"1/12/2190 9:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAX0AAAAAAAIBbQAAAAAAAAFlAAAAAAADAWEAAAAAAAMBgQAAAAAAAQGhAAAAAAADgZUAAAAAAAIBnQAAAAAAAQGVAAAAAAABgZEAAAAAAAGBvQAAAAAAAQGdAAAAAAAAgcEAAAAAAAMBUQAAAAAAAgFZAAAAAAACgcEAAAAAAAEBgQAAAAAAA0HJAAAAAAABAb0AAAAAAAEBoQAAAAAAAIGBAAAAAAADAWkAAAAAAACBgQAAAAAAA4GBAAAAAAACAY0AAAAAAAEBiQAAAAAAAQGFAAAAAAADgYEAAAAAAAIBcQAAAAAAAIGFAAAAAAAAAYUA=\",\"dtype\":\"float64\",\"shape\":[31]}}}],\"references\":[]},\"root\":\"96005\"}", "3": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/17/2184 18:15\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 166852\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/17/2184 18:15\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAYkA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "4": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/18/2125 17:26\",\"1/18/2125 23:36\",\"1/18/2125 2:10\",\"1/18/2125 8:00\",\"1/31/2125 22:52\",\"2/1/2125 17:38\",\"2/13/2125 23:02\",\"2/16/2125 16:34\",\"2/16/2125 20:14\",\"2/17/2125 14:36\",\"2/17/2125 19:47\",\"2/17/2125 1:05\",\"2/17/2125 8:42\",\"2/18/2125 0:16\",\"2/18/2125 13:42\",\"2/18/2125 23:59\",\"2/18/2125 5:18\",\"2/20/2125 17:48\",\"2/20/2125 6:53\",\"2/21/2125 16:03\",\"2/21/2125 4:35\",\"2/22/2125 12:38\",\"2/22/2125 17:58\",\"2/23/2125 14:20\",\"2/24/2125 11:46\",\"2/25/2125 10:00\",\"2/25/2125 9:00\",\"2/26/2125 16:24\",\"2/26/2125 3:53\",\"2/27/2125 3:37\",\"2/28/2125 14:09\",\"2/28/2125 20:49\",\"3/1/2125 4:59\",\"3/10/2125 6:56\",\"3/11/2125 2:38\",\"3/11/2125 5:56\",\"3/12/2125 12:16\",\"3/13/2125 13:20\",\"3/15/2125 21:25\",\"3/15/2125 23:52\",\"3/16/2125 5:25\",\"3/19/2125 23:27\",\"3/2/2125 11:04\",\"3/2/2125 17:18\",\"3/2/2125 20:50\",\"3/20/2125 14:05\",\"3/20/2125 23:16\",\"3/21/2125 21:31\",\"3/21/2125 22:13\",\"3/22/2125 0:22\",\"3/22/2125 6:18\",\"3/5/2125 13:31\",\"3/6/2125 14:21\",\"3/7/2125 2:03\",\"3/9/2125 17:11\",\"3/9/2125 8:33\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 184142\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/18/2125 17:26\",\"1/18/2125 23:36\",\"1/18/2125 2:10\",\"1/18/2125 8:00\",\"1/31/2125 22:52\",\"2/1/2125 17:38\",\"2/13/2125 23:02\",\"2/16/2125 16:34\",\"2/16/2125 20:14\",\"2/17/2125 14:36\",\"2/17/2125 19:47\",\"2/17/2125 1:05\",\"2/17/2125 8:42\",\"2/18/2125 0:16\",\"2/18/2125 13:42\",\"2/18/2125 23:59\",\"2/18/2125 5:18\",\"2/20/2125 17:48\",\"2/20/2125 6:53\",\"2/21/2125 16:03\",\"2/21/2125 4:35\",\"2/22/2125 12:38\",\"2/22/2125 17:58\",\"2/23/2125 14:20\",\"2/24/2125 11:46\",\"2/25/2125 10:00\",\"2/25/2125 9:00\",\"2/26/2125 16:24\",\"2/26/2125 3:53\",\"2/27/2125 3:37\",\"2/28/2125 14:09\",\"2/28/2125 20:49\",\"3/1/2125 4:59\",\"3/10/2125 6:56\",\"3/11/2125 2:38\",\"3/11/2125 5:56\",\"3/12/2125 12:16\",\"3/13/2125 13:20\",\"3/15/2125 21:25\",\"3/15/2125 23:52\",\"3/16/2125 5:25\",\"3/19/2125 23:27\",\"3/2/2125 11:04\",\"3/2/2125 17:18\",\"3/2/2125 20:50\",\"3/20/2125 14:05\",\"3/20/2125 23:16\",\"3/21/2125 21:31\",\"3/21/2125 22:13\",\"3/22/2125 0:22\",\"3/22/2125 6:18\",\"3/5/2125 13:31\",\"3/6/2125 14:21\",\"3/7/2125 2:03\",\"3/9/2125 17:11\",\"3/9/2125 8:33\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAVUAAAAAAAABWQAAAAAAAQFNAAAAAAABAWUAAAAAAAABaQAAAAAAAgFNAAAAAAAAAXkAAAAAAAABZQAAAAAAAwFlAAAAAAABAW0AAAAAAAMBgQAAAAAAAAFlAAAAAAABAW0AAAAAAAIBVQAAAAAAAYGBAAAAAAABgYEAAAAAAAMBUQAAAAAAAwGFAAAAAAAAAWUAAAAAAAMBeQAAAAAAA4GNAAAAAAAAAWUAAAAAAAEBfQAAAAAAAYGFAAAAAAAAAYkAAAAAAACBgQAAAAAAAwGBAAAAAAABgYUAAAAAAAMBkQAAAAAAAwFpAAAAAAAAAV0AAAAAAAEBWQAAAAAAAQFdAAAAAAACAXEAAAAAAAABWQAAAAAAAgFZAAAAAAADAVkAAAAAAAEBSQAAAAAAAgFZAAAAAAADAWUAAAAAAAEBaQAAAAAAAADlAAAAAAAAAWUAAAAAAAIBXQAAAAAAAQF5AAAAAAABgZEAAAAAAAMBeQAAAAAAAgEtAAAAAAADgYEAAAAAAAIBTQAAAAAAAgFZAAAAAAACAXkAAAAAAAABcQAAAAAAAAGBAAAAAAABAVEAAAAAAAIBXQA==\",\"dtype\":\"float64\",\"shape\":[56]}}}],\"references\":[]},\"root\":\"96005\"}", "5": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/22/2127 12:00\",\"1/22/2127 7:45\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 198978\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/22/2127 12:00\",\"1/22/2127 7:45\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABgakAAAAAAAABdQA==\",\"dtype\":\"float64\",\"shape\":[2]}}}],\"references\":[]},\"root\":\"96005\"}", "6": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/26/2177 10:32\",\"1/26/2177 11:00\",\"1/26/2177 13:12\",\"1/26/2177 18:00\",\"1/26/2177 9:18\",\"1/28/2177 17:26\",\"1/28/2177 3:34\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 109166\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/26/2177 10:32\",\"1/26/2177 11:00\",\"1/26/2177 13:12\",\"1/26/2177 18:00\",\"1/26/2177 9:18\",\"1/28/2177 17:26\",\"1/28/2177 3:34\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABgckAAAAAAAGBmQAAAAAAAwGdAAAAAAACwcEAAAAAAAMBlQAAAAAAAIGJAAAAAAADAVUA=\",\"dtype\":\"float64\",\"shape\":[7]}}}],\"references\":[]},\"root\":\"96005\"}", "7": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/31/2116 16:51\",\"1/31/2116 19:04\",\"1/31/2116 21:37\",\"2/5/2116 22:49\",\"2/6/2116 20:25\",\"2/7/2116 13:47\",\"2/7/2116 2:32\",\"2/7/2116 4:12\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 108890\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/31/2116 16:51\",\"1/31/2116 19:04\",\"1/31/2116 21:37\",\"2/5/2116 22:49\",\"2/6/2116 20:25\",\"2/7/2116 13:47\",\"2/7/2116 2:32\",\"2/7/2116 4:12\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACgZUAAAAAAAIBnQAAAAAAAYGhAAAAAAAAAX0AAAAAAAEBgQAAAAAAAwGJAAAAAAABgYUAAAAAAAABiQA==\",\"dtype\":\"float64\",\"shape\":[8]}}}],\"references\":[]},\"root\":\"96005\"}", "8": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/31/2135 12:00\",\"1/31/2135 18:00\",\"1/31/2135 5:20\",\"1/31/2135 6:00\",\"2/1/2135 12:00\",\"2/1/2135 18:00\",\"2/1/2135 2:59\",\"2/2/2135 0:00\",\"2/2/2135 12:00\",\"2/2/2135 17:37\",\"2/2/2135 18:00\",\"2/2/2135 5:00\",\"2/2/2135 5:03\",\"2/3/2135 0:00\",\"2/3/2135 12:00\",\"2/3/2135 18:00\",\"2/3/2135 5:04\",\"2/4/2135 0:00\",\"2/4/2135 12:00\",\"2/4/2135 18:00\",\"2/4/2135 23:00\",\"2/4/2135 4:08\",\"2/4/2135 6:00\",\"2/5/2135 12:00\",\"2/5/2135 18:00\",\"2/5/2135 4:48\",\"2/5/2135 6:00\",\"2/6/2135 0:00\",\"2/6/2135 4:03\",\"2/6/2135 6:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 111970\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/31/2135 12:00\",\"1/31/2135 18:00\",\"1/31/2135 5:20\",\"1/31/2135 5:20\",\"1/31/2135 6:00\",\"2/1/2135 12:00\",\"2/1/2135 18:00\",\"2/1/2135 2:59\",\"2/1/2135 2:59\",\"2/2/2135 0:00\",\"2/2/2135 12:00\",\"2/2/2135 17:37\",\"2/2/2135 17:37\",\"2/2/2135 18:00\",\"2/2/2135 5:00\",\"2/2/2135 5:03\",\"2/2/2135 5:03\",\"2/3/2135 0:00\",\"2/3/2135 0:00\",\"2/3/2135 12:00\",\"2/3/2135 18:00\",\"2/3/2135 5:04\",\"2/3/2135 5:04\",\"2/4/2135 0:00\",\"2/4/2135 12:00\",\"2/4/2135 18:00\",\"2/4/2135 23:00\",\"2/4/2135 4:08\",\"2/4/2135 4:08\",\"2/4/2135 6:00\",\"2/5/2135 12:00\",\"2/5/2135 18:00\",\"2/5/2135 4:48\",\"2/5/2135 4:48\",\"2/5/2135 6:00\",\"2/6/2135 0:00\",\"2/6/2135 4:03\",\"2/6/2135 4:03\",\"2/6/2135 6:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAYkAAAAAAAEBhQAAAAAAAQGZAAAAAAABAZkAAAAAAAKBqQAAAAAAAAGNAAAAAAAAAY0AAAAAAAEBmQAAAAAAAQGZAAAAAAADgYkAAAAAAACBhQAAAAAAAgF1AAAAAAACAXUAAAAAAAOBgQAAAAAAAgGFAAAAAAACAWUAAAAAAAIBZQAAAAAAA0HVAAAAAAADQdUAAAAAAAMBlQAAAAAAAoGdAAAAAAACgYUAAAAAAAKBhQAAAAAAAoGtAAAAAAACgY0AAAAAAAMBeQAAAAAAAAGdAAAAAAACAZUAAAAAAAIBlQAAAAAAAAGlAAAAAAADgZEAAAAAAAEBqQAAAAAAAAG9AAAAAAAAAb0AAAAAAAEBlQAAAAAAAIGdAAAAAAACgaEAAAAAAAKBoQAAAAAAAAGdA\",\"dtype\":\"float64\",\"shape\":[39]}}}],\"references\":[]},\"root\":\"96005\"}", "9": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/6/2151 20:37\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 175448\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/6/2151 20:37\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAUEA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "10": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/7/2168 12:00\",\"1/7/2168 13:00\",\"1/7/2168 17:00\",\"1/7/2168 18:21\",\"1/7/2168 22:00\",\"1/7/2168 23:06\",\"1/8/2168 3:02\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 151196\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/7/2168 12:00\",\"1/7/2168 13:00\",\"1/7/2168 17:00\",\"1/7/2168 18:21\",\"1/7/2168 22:00\",\"1/7/2168 23:06\",\"1/8/2168 3:02\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACATUAAAAAAAABeQAAAAAAA4GBAAAAAAACAYEAAAAAAAKBmQAAAAAAAwGVAAAAAAADgbkA=\",\"dtype\":\"float64\",\"shape\":[7]}}}],\"references\":[]},\"root\":\"96005\"}", "11": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"1/8/2125 14:08\",\"1/8/2125 2:20\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 199384\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"1/8/2125 14:08\",\"1/8/2125 2:20\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgYUAAAAAAACBgQA==\",\"dtype\":\"float64\",\"shape\":[2]}}}],\"references\":[]},\"root\":\"96005\"}", "12": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"10/10/2132 12:36\",\"10/10/2132 18:11\",\"10/10/2132 19:02\",\"10/10/2132 9:54\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 172298\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"10/10/2132 12:36\",\"10/10/2132 18:11\",\"10/10/2132 19:02\",\"10/10/2132 9:54\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABgckAAAAAAAIBYQAAAAAAAwFJAAAAAAABAZEA=\",\"dtype\":\"float64\",\"shape\":[4]}}}],\"references\":[]},\"root\":\"96005\"}", "13": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"10/10/2139 6:18\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 118901\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"10/10/2139 6:18\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgbEA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "14": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"10/14/2137 20:08\",\"10/14/2137 22:00\",\"10/15/2137 0:00\",\"10/15/2137 12:00\",\"10/15/2137 17:47\",\"10/15/2137 18:00\",\"10/15/2137 22:00\",\"10/15/2137 4:19\",\"10/15/2137 6:00\",\"10/16/2137 0:00\",\"10/16/2137 12:00\",\"10/16/2137 16:53\",\"10/16/2137 20:31\",\"10/16/2137 4:39\",\"10/16/2137 6:00\",\"10/18/2137 11:55\",\"10/19/2137 13:00\",\"10/19/2137 15:23\",\"10/19/2137 21:00\",\"10/19/2137 4:00\",\"10/20/2137 13:43\",\"10/20/2137 14:46\",\"10/20/2137 21:14\",\"10/20/2137 3:26\",\"10/20/2137 4:55\",\"10/20/2137 8:45\",\"10/21/2137 10:00\",\"10/21/2137 10:21\",\"10/21/2137 11:30\",\"10/21/2137 13:00\",\"10/21/2137 14:22\",\"10/21/2137 14:32\",\"10/21/2137 16:10\",\"10/21/2137 19:00\",\"10/21/2137 20:30\",\"10/21/2137 21:18\",\"10/21/2137 23:02\",\"10/21/2137 3:00\",\"10/21/2137 3:53\",\"10/21/2137 6:00\",\"10/21/2137 9:02\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 107414\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"10/14/2137 20:08\",\"10/14/2137 22:00\",\"10/15/2137 0:00\",\"10/15/2137 12:00\",\"10/15/2137 17:47\",\"10/15/2137 18:00\",\"10/15/2137 22:00\",\"10/15/2137 4:19\",\"10/15/2137 6:00\",\"10/16/2137 0:00\",\"10/16/2137 12:00\",\"10/16/2137 16:53\",\"10/16/2137 20:31\",\"10/16/2137 4:39\",\"10/16/2137 6:00\",\"10/18/2137 11:55\",\"10/19/2137 13:00\",\"10/19/2137 15:23\",\"10/19/2137 21:00\",\"10/19/2137 4:00\",\"10/20/2137 13:43\",\"10/20/2137 14:46\",\"10/20/2137 21:14\",\"10/20/2137 3:26\",\"10/20/2137 4:55\",\"10/20/2137 8:45\",\"10/21/2137 10:00\",\"10/21/2137 10:21\",\"10/21/2137 11:30\",\"10/21/2137 13:00\",\"10/21/2137 14:22\",\"10/21/2137 14:32\",\"10/21/2137 16:10\",\"10/21/2137 19:00\",\"10/21/2137 20:30\",\"10/21/2137 21:18\",\"10/21/2137 23:02\",\"10/21/2137 3:00\",\"10/21/2137 3:53\",\"10/21/2137 6:00\",\"10/21/2137 9:02\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAga0AAAAAAAOBtQAAAAAAAQG9AAAAAAADgZEAAAAAAAEBfQAAAAAAAoGFAAAAAAACgYkAAAAAAACBmQAAAAAAAQGhAAAAAAAAAYEAAAAAAAMBXQAAAAAAAQGJAAAAAAAAgaEAAAAAAAIBZQAAAAAAAwF1AAAAAAACAXkAAAAAAAMBeQAAAAAAAwFtAAAAAAADAXkAAAAAAAEBZQAAAAAAAAF9AAAAAAAAAW0AAAAAAAEBUQAAAAAAAYGRAAAAAAABAZUAAAAAAAMBfQAAAAAAAQFtAAAAAAABAVkAAAAAAAEBWQAAAAAAAQFNAAAAAAADAUkAAAAAAAMBRQAAAAAAAQFpAAAAAAAAAVUAAAAAAAIBNQAAAAAAAwFJAAAAAAADAWUAAAAAAAMBYQAAAAAAAwFFAAAAAAADAV0AAAAAAAABMQA==\",\"dtype\":\"float64\",\"shape\":[41]}}}],\"references\":[]},\"root\":\"96005\"}", "15": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"10/15/2171 18:02\",\"10/15/2171 21:20\",\"10/15/2171 22:00\",\"10/16/2171 10:00\",\"10/16/2171 12:00\",\"10/16/2171 14:30\",\"10/16/2171 15:42\",\"10/16/2171 16:00\",\"10/16/2171 18:00\",\"10/16/2171 20:18\",\"10/16/2171 2:18\",\"10/16/2171 4:00\",\"10/16/2171 7:27\",\"10/17/2171 10:00\",\"10/17/2171 12:00\",\"10/17/2171 14:42\",\"10/17/2171 16:35\",\"10/17/2171 17:20\",\"10/17/2171 1:42\",\"10/17/2171 20:49\",\"10/17/2171 3:00\",\"10/17/2171 4:00\",\"10/17/2171 9:25\",\"10/18/2171 4:20\",\"10/19/2171 4:42\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 125124\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"10/15/2171 18:02\",\"10/15/2171 21:20\",\"10/15/2171 22:00\",\"10/16/2171 10:00\",\"10/16/2171 12:00\",\"10/16/2171 14:30\",\"10/16/2171 15:42\",\"10/16/2171 16:00\",\"10/16/2171 18:00\",\"10/16/2171 20:18\",\"10/16/2171 2:18\",\"10/16/2171 4:00\",\"10/16/2171 7:27\",\"10/17/2171 10:00\",\"10/17/2171 12:00\",\"10/17/2171 14:42\",\"10/17/2171 16:35\",\"10/17/2171 17:20\",\"10/17/2171 1:42\",\"10/17/2171 20:49\",\"10/17/2171 3:00\",\"10/17/2171 4:00\",\"10/17/2171 9:25\",\"10/18/2171 4:20\",\"10/19/2171 4:42\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgY0AAAAAAAMBoQAAAAAAAoGlAAAAAAABAbEAAAAAAAEBoQAAAAAAAwGZAAAAAAACgYkAAAAAAACBmQAAAAAAAAGNAAAAAAADAXkAAAAAAAABuQAAAAAAAYG9AAAAAAACgbUAAAAAAAABgQAAAAAAAAFpAAAAAAABAWUAAAAAAAEBXQAAAAAAAQFZAAAAAAADAXkAAAAAAAMBdQAAAAAAAYGRAAAAAAADAYUAAAAAAAABeQAAAAAAAwFdAAAAAAADAWUA=\",\"dtype\":\"float64\",\"shape\":[25]}}}],\"references\":[]},\"root\":\"96005\"}", "16": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"10/16/2176 10:04\",\"10/16/2176 10:27\",\"10/16/2176 11:34\",\"10/16/2176 12:42\",\"10/16/2176 14:05\",\"10/16/2176 14:52\",\"10/16/2176 15:08\",\"10/16/2176 16:12\",\"10/16/2176 17:36\",\"10/16/2176 18:50\",\"10/16/2176 19:41\",\"10/16/2176 20:28\",\"10/16/2176 21:46\",\"10/16/2176 23:20\",\"10/16/2176 23:29\",\"10/16/2176 8:30\",\"10/16/2176 9:27\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 116346\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"10/16/2176 10:04\",\"10/16/2176 10:27\",\"10/16/2176 11:34\",\"10/16/2176 12:42\",\"10/16/2176 14:05\",\"10/16/2176 14:52\",\"10/16/2176 15:08\",\"10/16/2176 16:12\",\"10/16/2176 17:36\",\"10/16/2176 18:50\",\"10/16/2176 19:41\",\"10/16/2176 20:28\",\"10/16/2176 21:46\",\"10/16/2176 23:20\",\"10/16/2176 23:29\",\"10/16/2176 8:30\",\"10/16/2176 9:27\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAXUAAAAAAAIBbQAAAAAAAgFVAAAAAAAAAU0AAAAAAAABJQAAAAAAAgFhAAAAAAAAAVkAAAAAAAMBVQAAAAAAAQF9AAAAAAAAAYUAAAAAAACBjQAAAAAAAoGFAAAAAAADAZEAAAAAAAMBaQAAAAAAAgFpAAAAAAAAAVUAAAAAAAABEQA==\",\"dtype\":\"float64\",\"shape\":[17]}}}],\"references\":[]},\"root\":\"96005\"}", "17": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"10/3/2130 10:44\",\"10/3/2130 14:17\",\"10/3/2130 19:55\",\"10/3/2130 6:10\",\"10/3/2130 7:35\",\"10/4/2130 0:50\",\"10/4/2130 10:55\",\"10/4/2130 4:00\",\"10/4/2130 4:35\",\"10/4/2130 6:28\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 117923\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"10/3/2130 10:44\",\"10/3/2130 14:17\",\"10/3/2130 19:55\",\"10/3/2130 6:10\",\"10/3/2130 7:35\",\"10/4/2130 0:50\",\"10/4/2130 10:55\",\"10/4/2130 4:00\",\"10/4/2130 4:35\",\"10/4/2130 6:28\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAATkAAAAAAAGBgQAAAAAAA4G9AAAAAAACAUUAAAAAAAOBlQAAAAAAAwGhAAAAAAADgaEAAAAAAAOBvQAAAAAAAwGxAAAAAAACAaUA=\",\"dtype\":\"float64\",\"shape\":[10]}}}],\"references\":[]},\"root\":\"96005\"}", "18": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/10/2196 14:15\",\"11/10/2196 20:00\",\"11/10/2196 8:00\",\"11/11/2196 10:01\",\"11/11/2196 15:25\",\"11/11/2196 20:00\",\"11/11/2196 22:00\",\"11/11/2196 2:26\",\"11/12/2196 0:00\",\"11/12/2196 2:00\",\"11/12/2196 8:00\",\"11/9/2196 11:55\",\"11/9/2196 14:00\",\"11/9/2196 16:00\",\"11/9/2196 18:28\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 181113\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/10/2196 14:15\",\"11/10/2196 20:00\",\"11/10/2196 8:00\",\"11/11/2196 10:01\",\"11/11/2196 15:25\",\"11/11/2196 20:00\",\"11/11/2196 22:00\",\"11/11/2196 2:26\",\"11/12/2196 0:00\",\"11/12/2196 2:00\",\"11/12/2196 8:00\",\"11/9/2196 11:55\",\"11/9/2196 14:00\",\"11/9/2196 16:00\",\"11/9/2196 18:28\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAZUAAAAAAAGBlQAAAAAAAYGFAAAAAAADAX0AAAAAAAMBkQAAAAAAAgFRAAAAAAAAAWEAAAAAAAIBYQAAAAAAAAFtAAAAAAAAAXEAAAAAAAMBZQAAAAAAAAFxAAAAAAADAVkAAAAAAAMBTQAAAAAAAgF1A\",\"dtype\":\"float64\",\"shape\":[15]}}}],\"references\":[]},\"root\":\"96005\"}", "19": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/12/2154 20:00\",\"11/12/2154 20:45\",\"11/12/2154 21:00\",\"11/12/2154 22:00\",\"11/12/2154 23:00\",\"11/13/2154 0:00\",\"11/13/2154 10:00\",\"11/13/2154 10:30\",\"11/13/2154 11:00\",\"11/13/2154 11:30\",\"11/13/2154 12:00\",\"11/13/2154 13:00\",\"11/13/2154 14:00\",\"11/13/2154 14:57\",\"11/13/2154 15:00\",\"11/13/2154 17:00\",\"11/13/2154 19:00\",\"11/13/2154 1:00\",\"11/13/2154 20:00\",\"11/13/2154 21:00\",\"11/13/2154 22:00\",\"11/13/2154 22:20\",\"11/13/2154 23:00\",\"11/13/2154 2:00\",\"11/13/2154 3:00\",\"11/13/2154 4:00\",\"11/13/2154 4:24\",\"11/13/2154 5:00\",\"11/13/2154 6:00\",\"11/13/2154 7:00\",\"11/13/2154 8:00\",\"11/13/2154 9:35\",\"11/14/2154 0:00\",\"11/14/2154 10:00\",\"11/14/2154 11:00\",\"11/14/2154 12:00\",\"11/14/2154 13:00\",\"11/14/2154 13:41\",\"11/14/2154 14:00\",\"11/14/2154 15:00\",\"11/14/2154 16:00\",\"11/14/2154 17:00\",\"11/14/2154 18:00\",\"11/14/2154 19:00\",\"11/14/2154 1:00\",\"11/14/2154 20:00\",\"11/14/2154 20:30\",\"11/14/2154 21:00\",\"11/14/2154 22:00\",\"11/14/2154 23:00\",\"11/14/2154 2:00\",\"11/14/2154 3:00\",\"11/14/2154 4:00\",\"11/14/2154 4:07\",\"11/14/2154 5:00\",\"11/14/2154 6:00\",\"11/14/2154 7:00\",\"11/14/2154 8:00\",\"11/14/2154 9:00\",\"11/15/2154 0:00\",\"11/15/2154 10:00\",\"11/15/2154 11:00\",\"11/15/2154 13:00\",\"11/15/2154 14:10\",\"11/15/2154 15:00\",\"11/15/2154 16:00\",\"11/15/2154 17:00\",\"11/15/2154 19:00\",\"11/15/2154 1:00\",\"11/15/2154 21:00\",\"11/15/2154 23:00\",\"11/15/2154 2:00\",\"11/15/2154 3:00\",\"11/15/2154 4:00\",\"11/15/2154 5:00\",\"11/15/2154 6:00\",\"11/15/2154 7:00\",\"11/15/2154 8:00\",\"11/15/2154 9:00\",\"11/16/2154 1:00\",\"11/16/2154 3:00\",\"11/16/2154 4:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 176203\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/12/2154 20:00\",\"11/12/2154 20:45\",\"11/12/2154 20:45\",\"11/12/2154 21:00\",\"11/12/2154 22:00\",\"11/12/2154 23:00\",\"11/13/2154 0:00\",\"11/13/2154 10:00\",\"11/13/2154 10:30\",\"11/13/2154 11:00\",\"11/13/2154 11:30\",\"11/13/2154 12:00\",\"11/13/2154 13:00\",\"11/13/2154 14:00\",\"11/13/2154 14:57\",\"11/13/2154 14:57\",\"11/13/2154 15:00\",\"11/13/2154 17:00\",\"11/13/2154 19:00\",\"11/13/2154 1:00\",\"11/13/2154 20:00\",\"11/13/2154 21:00\",\"11/13/2154 22:00\",\"11/13/2154 22:20\",\"11/13/2154 22:20\",\"11/13/2154 23:00\",\"11/13/2154 2:00\",\"11/13/2154 3:00\",\"11/13/2154 4:00\",\"11/13/2154 4:24\",\"11/13/2154 4:24\",\"11/13/2154 5:00\",\"11/13/2154 6:00\",\"11/13/2154 7:00\",\"11/13/2154 8:00\",\"11/13/2154 9:35\",\"11/14/2154 0:00\",\"11/14/2154 10:00\",\"11/14/2154 11:00\",\"11/14/2154 12:00\",\"11/14/2154 13:00\",\"11/14/2154 13:41\",\"11/14/2154 13:41\",\"11/14/2154 14:00\",\"11/14/2154 15:00\",\"11/14/2154 16:00\",\"11/14/2154 17:00\",\"11/14/2154 18:00\",\"11/14/2154 19:00\",\"11/14/2154 1:00\",\"11/14/2154 20:00\",\"11/14/2154 20:30\",\"11/14/2154 21:00\",\"11/14/2154 22:00\",\"11/14/2154 23:00\",\"11/14/2154 2:00\",\"11/14/2154 3:00\",\"11/14/2154 4:00\",\"11/14/2154 4:07\",\"11/14/2154 4:07\",\"11/14/2154 5:00\",\"11/14/2154 6:00\",\"11/14/2154 7:00\",\"11/14/2154 8:00\",\"11/14/2154 9:00\",\"11/15/2154 0:00\",\"11/15/2154 10:00\",\"11/15/2154 11:00\",\"11/15/2154 13:00\",\"11/15/2154 14:10\",\"11/15/2154 14:10\",\"11/15/2154 15:00\",\"11/15/2154 16:00\",\"11/15/2154 17:00\",\"11/15/2154 19:00\",\"11/15/2154 1:00\",\"11/15/2154 21:00\",\"11/15/2154 23:00\",\"11/15/2154 2:00\",\"11/15/2154 3:00\",\"11/15/2154 3:00\",\"11/15/2154 3:00\",\"11/15/2154 4:00\",\"11/15/2154 5:00\",\"11/15/2154 6:00\",\"11/15/2154 7:00\",\"11/15/2154 8:00\",\"11/15/2154 9:00\",\"11/16/2154 1:00\",\"11/16/2154 3:00\",\"11/16/2154 4:00\",\"11/16/2154 4:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABgb0AAAAAAAOBuQAAAAAAA4G5AAAAAAABAb0AAAAAAABByQAAAAAAA8HNAAAAAAADgdEAAAAAAAIBUQAAAAAAAwFNAAAAAAADAVEAAAAAAAEBWQAAAAAAAQFhAAAAAAACAW0AAAAAAAGBhQAAAAAAAwGRAAAAAAADAZEAAAAAAAOBqQAAAAAAA4GNAAAAAAACAaUAAAAAAADB1QAAAAAAAAGRAAAAAAABgZ0AAAAAAACBkQAAAAAAAoGRAAAAAAACgZEAAAAAAAMBiQAAAAAAAMHNAAAAAAADgb0AAAAAAAEBtQAAAAAAAYG5AAAAAAABgbkAAAAAAAGBrQAAAAAAAwGhAAAAAAAAgY0AAAAAAAEBhQAAAAAAAQFdAAAAAAABgYkAAAAAAAEBeQAAAAAAAAGBAAAAAAAAgYEAAAAAAAOBgQAAAAAAAwGBAAAAAAADAYEAAAAAAAABfQAAAAAAA4GJAAAAAAABgYUAAAAAAAABgQAAAAAAAQF1AAAAAAAAAW0AAAAAAAIBiQAAAAAAAwFNAAAAAAADAVEAAAAAAAABcQAAAAAAAgGBAAAAAAACAYUAAAAAAAABiQAAAAAAAIGBAAAAAAACAYEAAAAAAAABfQAAAAAAAAF9AAAAAAACAXUAAAAAAAIBaQAAAAAAAgFZAAAAAAABAWUAAAAAAAEBaQAAAAAAAYGJAAAAAAAAgcEAAAAAAACBxQAAAAAAAMHBAAAAAAADgbkAAAAAAAOBuQAAAAAAAoG5AAAAAAADgakAAAAAAAMBlQAAAAAAAwGRAAAAAAADAYEAAAAAAAIBZQAAAAAAAAFZAAAAAAADAYEAAAAAAAEBcQAAAAAAAQF5AAAAAAABAXEAAAAAAAIBcQAAAAAAAQFlAAAAAAAAAW0AAAAAAAEBZQAAAAAAAAGJAAAAAAAAgbUAAAAAAAABfQAAAAAAAgGFAAAAAAADQfUAAAAAAANB9QA==\",\"dtype\":\"float64\",\"shape\":[92]}}}],\"references\":[]},\"root\":\"96005\"}", "20": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/18/2133 12:00\",\"11/18/2133 17:00\",\"11/18/2133 23:00\",\"11/18/2133 23:22\",\"11/19/2133 10:00\",\"11/19/2133 12:00\",\"11/19/2133 13:00\",\"11/19/2133 14:00\",\"11/19/2133 14:27\",\"11/19/2133 15:00\",\"11/19/2133 16:00\",\"11/19/2133 17:00\",\"11/19/2133 18:00\",\"11/19/2133 19:00\",\"11/19/2133 20:00\",\"11/19/2133 21:00\",\"11/19/2133 22:00\",\"11/19/2133 23:00\",\"11/19/2133 4:43\",\"11/19/2133 5:00\",\"11/20/2133 0:00\",\"11/20/2133 10:00\",\"11/20/2133 11:00\",\"11/20/2133 13:00\",\"11/20/2133 15:00\",\"11/20/2133 17:00\",\"11/20/2133 17:36\",\"11/20/2133 19:00\",\"11/20/2133 1:00\",\"11/20/2133 21:00\",\"11/20/2133 23:00\",\"11/20/2133 23:28\",\"11/20/2133 2:00\",\"11/20/2133 3:00\",\"11/20/2133 4:00\",\"11/20/2133 5:00\",\"11/20/2133 6:00\",\"11/20/2133 7:00\",\"11/20/2133 8:00\",\"11/20/2133 9:00\",\"11/21/2133 10:00\",\"11/21/2133 11:00\",\"11/21/2133 12:00\",\"11/21/2133 13:00\",\"11/21/2133 15:00\",\"11/21/2133 16:00\",\"11/21/2133 17:00\",\"11/21/2133 19:00\",\"11/21/2133 1:00\",\"11/21/2133 20:00\",\"11/21/2133 21:00\",\"11/21/2133 21:10\",\"11/21/2133 22:00\",\"11/21/2133 23:00\",\"11/21/2133 2:51\",\"11/21/2133 3:00\",\"11/21/2133 4:51\",\"11/21/2133 5:00\",\"11/21/2133 7:00\",\"11/21/2133 9:00\",\"11/22/2133 0:00\",\"11/22/2133 10:00\",\"11/22/2133 11:00\",\"11/22/2133 12:00\",\"11/22/2133 13:00\",\"11/22/2133 14:00\",\"11/22/2133 16:00\",\"11/22/2133 17:00\",\"11/22/2133 18:00\",\"11/22/2133 19:00\",\"11/22/2133 20:00\",\"11/22/2133 21:00\",\"11/22/2133 22:00\",\"11/22/2133 23:00\",\"11/22/2133 2:00\",\"11/22/2133 3:00\",\"11/22/2133 4:00\",\"11/22/2133 5:00\",\"11/22/2133 6:00\",\"11/22/2133 7:00\",\"11/22/2133 8:00\",\"11/23/2133 0:00\",\"11/23/2133 10:00\",\"11/23/2133 11:00\",\"11/23/2133 13:00\",\"11/23/2133 14:00\",\"11/23/2133 15:00\",\"11/23/2133 15:11\",\"11/23/2133 16:00\",\"11/23/2133 17:00\",\"11/23/2133 18:00\",\"11/23/2133 19:00\",\"11/23/2133 20:00\",\"11/23/2133 21:00\",\"11/23/2133 22:00\",\"11/23/2133 23:00\",\"11/23/2133 2:00\",\"11/23/2133 2:28\",\"11/23/2133 4:00\",\"11/23/2133 5:15\",\"11/23/2133 6:30\",\"11/23/2133 7:00\",\"11/23/2133 8:00\",\"11/23/2133 8:27\",\"11/23/2133 9:00\",\"11/24/2133 10:00\",\"11/24/2133 11:00\",\"11/24/2133 11:19\",\"11/24/2133 11:28\",\"11/24/2133 12:00\",\"11/24/2133 13:00\",\"11/24/2133 14:00\",\"11/24/2133 15:00\",\"11/24/2133 15:56\",\"11/24/2133 16:00\",\"11/24/2133 16:09\",\"11/24/2133 17:00\",\"11/24/2133 18:00\",\"11/24/2133 19:00\",\"11/24/2133 1:00\",\"11/24/2133 20:00\",\"11/24/2133 20:57\",\"11/24/2133 21:00\",\"11/24/2133 22:00\",\"11/24/2133 23:00\",\"11/24/2133 3:00\",\"11/24/2133 5:00\",\"11/24/2133 7:00\",\"11/24/2133 8:00\",\"11/24/2133 9:00\",\"11/25/2133 0:00\",\"11/25/2133 11:00\",\"11/25/2133 12:00\",\"11/25/2133 13:00\",\"11/25/2133 14:00\",\"11/25/2133 14:55\",\"11/25/2133 15:00\",\"11/25/2133 16:00\",\"11/25/2133 17:00\",\"11/25/2133 18:00\",\"11/25/2133 19:00\",\"11/25/2133 1:00\",\"11/25/2133 20:00\",\"11/25/2133 20:50\",\"11/25/2133 21:00\",\"11/25/2133 22:00\",\"11/25/2133 23:00\",\"11/25/2133 2:00\",\"11/25/2133 2:54\",\"11/25/2133 3:00\",\"11/25/2133 4:00\",\"11/25/2133 5:00\",\"11/25/2133 7:00\",\"11/25/2133 8:36\",\"11/25/2133 9:00\",\"11/26/2133 0:00\",\"11/26/2133 10:00\",\"11/26/2133 11:00\",\"11/26/2133 12:00\",\"11/26/2133 13:00\",\"11/26/2133 14:00\",\"11/26/2133 14:36\",\"11/26/2133 15:00\",\"11/26/2133 16:00\",\"11/26/2133 17:00\",\"11/26/2133 18:00\",\"11/26/2133 18:58\",\"11/26/2133 19:15\",\"11/26/2133 1:00\",\"11/26/2133 20:00\",\"11/26/2133 21:00\",\"11/26/2133 22:00\",\"11/26/2133 23:00\",\"11/26/2133 2:00\",\"11/26/2133 3:00\",\"11/26/2133 4:00\",\"11/26/2133 5:00\",\"11/26/2133 6:00\",\"11/26/2133 7:00\",\"11/26/2133 8:00\",\"11/26/2133 9:00\",\"11/27/2133 0:00\",\"11/27/2133 10:00\",\"11/27/2133 11:00\",\"11/27/2133 12:00\",\"11/27/2133 13:00\",\"11/27/2133 14:00\",\"11/27/2133 15:00\",\"11/27/2133 17:00\",\"11/27/2133 18:00\",\"11/27/2133 19:00\",\"11/27/2133 1:00\",\"11/27/2133 20:00\",\"11/27/2133 21:00\",\"11/27/2133 22:00\",\"11/27/2133 23:00\",\"11/27/2133 2:00\",\"11/27/2133 2:45\",\"11/27/2133 3:00\",\"11/27/2133 4:00\",\"11/27/2133 5:00\",\"11/27/2133 6:00\",\"11/27/2133 7:00\",\"11/27/2133 8:00\",\"11/27/2133 9:00\",\"11/28/2133 10:00\",\"11/28/2133 11:00\",\"11/28/2133 12:00\",\"11/28/2133 13:00\",\"11/28/2133 14:00\",\"11/28/2133 15:00\",\"11/28/2133 16:00\",\"11/28/2133 16:03\",\"11/28/2133 17:00\",\"11/28/2133 19:00\",\"11/28/2133 1:00\",\"11/28/2133 20:00\",\"11/28/2133 22:00\",\"11/28/2133 2:30\",\"11/28/2133 3:00\",\"11/28/2133 5:00\",\"11/28/2133 7:00\",\"11/28/2133 8:00\",\"11/28/2133 9:00\",\"11/29/2133 10:00\",\"11/29/2133 11:00\",\"11/29/2133 12:00\",\"11/29/2133 13:00\",\"11/29/2133 14:00\",\"11/29/2133 15:00\",\"11/29/2133 15:15\",\"11/29/2133 16:00\",\"11/29/2133 17:00\",\"11/29/2133 18:00\",\"11/29/2133 19:00\",\"11/29/2133 1:00\",\"11/29/2133 3:00\",\"11/29/2133 4:00\",\"11/29/2133 4:04\",\"11/29/2133 6:00\",\"11/29/2133 7:00\",\"11/29/2133 8:00\",\"11/29/2133 9:00\",\"11/30/2133 0:00\",\"11/30/2133 12:00\",\"11/30/2133 14:30\",\"11/30/2133 15:30\",\"11/30/2133 15:31\",\"11/30/2133 16:00\",\"11/30/2133 17:00\",\"11/30/2133 18:00\",\"11/30/2133 19:00\",\"11/30/2133 1:00\",\"11/30/2133 20:00\",\"11/30/2133 21:00\",\"11/30/2133 22:00\",\"11/30/2133 23:00\",\"11/30/2133 4:00\",\"11/30/2133 4:41\",\"12/1/2133 0:00\",\"12/1/2133 10:45\",\"12/1/2133 11:30\",\"12/1/2133 12:00\",\"12/1/2133 12:45\",\"12/1/2133 1:00\",\"12/1/2133 2:00\",\"12/1/2133 3:00\",\"12/1/2133 4:00\",\"12/1/2133 5:00\",\"12/1/2133 6:00\",\"12/1/2133 7:00\",\"12/1/2133 7:57\",\"12/1/2133 8:00\",\"12/1/2133 9:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 164853\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/18/2133 12:00\",\"11/18/2133 17:00\",\"11/18/2133 23:00\",\"11/18/2133 23:22\",\"11/18/2133 23:22\",\"11/19/2133 10:00\",\"11/19/2133 12:00\",\"11/19/2133 13:00\",\"11/19/2133 14:00\",\"11/19/2133 14:27\",\"11/19/2133 14:27\",\"11/19/2133 15:00\",\"11/19/2133 16:00\",\"11/19/2133 17:00\",\"11/19/2133 18:00\",\"11/19/2133 19:00\",\"11/19/2133 20:00\",\"11/19/2133 21:00\",\"11/19/2133 21:00\",\"11/19/2133 21:00\",\"11/19/2133 22:00\",\"11/19/2133 23:00\",\"11/19/2133 4:43\",\"11/19/2133 4:43\",\"11/19/2133 5:00\",\"11/20/2133 0:00\",\"11/20/2133 10:00\",\"11/20/2133 11:00\",\"11/20/2133 13:00\",\"11/20/2133 15:00\",\"11/20/2133 17:00\",\"11/20/2133 17:36\",\"11/20/2133 17:36\",\"11/20/2133 19:00\",\"11/20/2133 1:00\",\"11/20/2133 21:00\",\"11/20/2133 23:00\",\"11/20/2133 23:28\",\"11/20/2133 23:28\",\"11/20/2133 2:00\",\"11/20/2133 3:00\",\"11/20/2133 3:00\",\"11/20/2133 3:00\",\"11/20/2133 4:00\",\"11/20/2133 5:00\",\"11/20/2133 6:00\",\"11/20/2133 7:00\",\"11/20/2133 8:00\",\"11/20/2133 9:00\",\"11/21/2133 10:00\",\"11/21/2133 11:00\",\"11/21/2133 12:00\",\"11/21/2133 13:00\",\"11/21/2133 15:00\",\"11/21/2133 16:00\",\"11/21/2133 17:00\",\"11/21/2133 19:00\",\"11/21/2133 1:00\",\"11/21/2133 20:00\",\"11/21/2133 21:00\",\"11/21/2133 21:10\",\"11/21/2133 22:00\",\"11/21/2133 23:00\",\"11/21/2133 2:51\",\"11/21/2133 2:51\",\"11/21/2133 3:00\",\"11/21/2133 4:51\",\"11/21/2133 4:51\",\"11/21/2133 5:00\",\"11/21/2133 7:00\",\"11/21/2133 9:00\",\"11/22/2133 0:00\",\"11/22/2133 10:00\",\"11/22/2133 11:00\",\"11/22/2133 12:00\",\"11/22/2133 13:00\",\"11/22/2133 14:00\",\"11/22/2133 16:00\",\"11/22/2133 17:00\",\"11/22/2133 18:00\",\"11/22/2133 19:00\",\"11/22/2133 20:00\",\"11/22/2133 21:00\",\"11/22/2133 22:00\",\"11/22/2133 23:00\",\"11/22/2133 2:00\",\"11/22/2133 3:00\",\"11/22/2133 3:00\",\"11/22/2133 3:00\",\"11/22/2133 4:00\",\"11/22/2133 4:00\",\"11/22/2133 4:00\",\"11/22/2133 5:00\",\"11/22/2133 6:00\",\"11/22/2133 7:00\",\"11/22/2133 8:00\",\"11/23/2133 0:00\",\"11/23/2133 10:00\",\"11/23/2133 11:00\",\"11/23/2133 13:00\",\"11/23/2133 14:00\",\"11/23/2133 15:00\",\"11/23/2133 15:00\",\"11/23/2133 15:00\",\"11/23/2133 15:11\",\"11/23/2133 15:11\",\"11/23/2133 16:00\",\"11/23/2133 17:00\",\"11/23/2133 18:00\",\"11/23/2133 19:00\",\"11/23/2133 20:00\",\"11/23/2133 21:00\",\"11/23/2133 22:00\",\"11/23/2133 23:00\",\"11/23/2133 2:00\",\"11/23/2133 2:28\",\"11/23/2133 2:28\",\"11/23/2133 4:00\",\"11/23/2133 5:15\",\"11/23/2133 6:30\",\"11/23/2133 7:00\",\"11/23/2133 8:00\",\"11/23/2133 8:27\",\"11/23/2133 8:27\",\"11/23/2133 9:00\",\"11/23/2133 9:00\",\"11/23/2133 9:00\",\"11/24/2133 10:00\",\"11/24/2133 11:00\",\"11/24/2133 11:19\",\"11/24/2133 11:19\",\"11/24/2133 11:28\",\"11/24/2133 11:28\",\"11/24/2133 12:00\",\"11/24/2133 13:00\",\"11/24/2133 14:00\",\"11/24/2133 15:00\",\"11/24/2133 15:56\",\"11/24/2133 15:56\",\"11/24/2133 16:00\",\"11/24/2133 16:09\",\"11/24/2133 16:09\",\"11/24/2133 17:00\",\"11/24/2133 18:00\",\"11/24/2133 19:00\",\"11/24/2133 1:00\",\"11/24/2133 20:00\",\"11/24/2133 20:57\",\"11/24/2133 20:57\",\"11/24/2133 21:00\",\"11/24/2133 22:00\",\"11/24/2133 23:00\",\"11/24/2133 3:00\",\"11/24/2133 3:00\",\"11/24/2133 3:00\",\"11/24/2133 5:00\",\"11/24/2133 7:00\",\"11/24/2133 8:00\",\"11/24/2133 9:00\",\"11/25/2133 0:00\",\"11/25/2133 11:00\",\"11/25/2133 12:00\",\"11/25/2133 13:00\",\"11/25/2133 14:00\",\"11/25/2133 14:55\",\"11/25/2133 14:55\",\"11/25/2133 15:00\",\"11/25/2133 16:00\",\"11/25/2133 17:00\",\"11/25/2133 18:00\",\"11/25/2133 19:00\",\"11/25/2133 1:00\",\"11/25/2133 20:00\",\"11/25/2133 20:50\",\"11/25/2133 20:50\",\"11/25/2133 21:00\",\"11/25/2133 22:00\",\"11/25/2133 23:00\",\"11/25/2133 2:00\",\"11/25/2133 2:54\",\"11/25/2133 2:54\",\"11/25/2133 3:00\",\"11/25/2133 4:00\",\"11/25/2133 5:00\",\"11/25/2133 7:00\",\"11/25/2133 8:36\",\"11/25/2133 8:36\",\"11/25/2133 9:00\",\"11/26/2133 0:00\",\"11/26/2133 10:00\",\"11/26/2133 11:00\",\"11/26/2133 12:00\",\"11/26/2133 13:00\",\"11/26/2133 14:00\",\"11/26/2133 14:36\",\"11/26/2133 14:36\",\"11/26/2133 15:00\",\"11/26/2133 16:00\",\"11/26/2133 17:00\",\"11/26/2133 18:00\",\"11/26/2133 18:58\",\"11/26/2133 18:58\",\"11/26/2133 19:15\",\"11/26/2133 1:00\",\"11/26/2133 20:00\",\"11/26/2133 21:00\",\"11/26/2133 22:00\",\"11/26/2133 23:00\",\"11/26/2133 2:00\",\"11/26/2133 3:00\",\"11/26/2133 3:00\",\"11/26/2133 3:00\",\"11/26/2133 4:00\",\"11/26/2133 5:00\",\"11/26/2133 6:00\",\"11/26/2133 7:00\",\"11/26/2133 8:00\",\"11/26/2133 9:00\",\"11/26/2133 9:00\",\"11/26/2133 9:00\",\"11/27/2133 0:00\",\"11/27/2133 10:00\",\"11/27/2133 11:00\",\"11/27/2133 12:00\",\"11/27/2133 13:00\",\"11/27/2133 14:00\",\"11/27/2133 14:00\",\"11/27/2133 14:00\",\"11/27/2133 15:00\",\"11/27/2133 17:00\",\"11/27/2133 18:00\",\"11/27/2133 19:00\",\"11/27/2133 1:00\",\"11/27/2133 20:00\",\"11/27/2133 21:00\",\"11/27/2133 22:00\",\"11/27/2133 23:00\",\"11/27/2133 2:00\",\"11/27/2133 2:45\",\"11/27/2133 2:45\",\"11/27/2133 3:00\",\"11/27/2133 4:00\",\"11/27/2133 5:00\",\"11/27/2133 6:00\",\"11/27/2133 7:00\",\"11/27/2133 8:00\",\"11/27/2133 9:00\",\"11/27/2133 9:00\",\"11/27/2133 9:00\",\"11/28/2133 10:00\",\"11/28/2133 11:00\",\"11/28/2133 12:00\",\"11/28/2133 13:00\",\"11/28/2133 14:00\",\"11/28/2133 15:00\",\"11/28/2133 16:00\",\"11/28/2133 16:03\",\"11/28/2133 16:03\",\"11/28/2133 17:00\",\"11/28/2133 19:00\",\"11/28/2133 1:00\",\"11/28/2133 20:00\",\"11/28/2133 22:00\",\"11/28/2133 2:30\",\"11/28/2133 2:30\",\"11/28/2133 3:00\",\"11/28/2133 5:00\",\"11/28/2133 7:00\",\"11/28/2133 8:00\",\"11/28/2133 9:00\",\"11/29/2133 10:00\",\"11/29/2133 11:00\",\"11/29/2133 12:00\",\"11/29/2133 13:00\",\"11/29/2133 14:00\",\"11/29/2133 15:00\",\"11/29/2133 15:15\",\"11/29/2133 15:15\",\"11/29/2133 16:00\",\"11/29/2133 17:00\",\"11/29/2133 18:00\",\"11/29/2133 19:00\",\"11/29/2133 1:00\",\"11/29/2133 3:00\",\"11/29/2133 4:00\",\"11/29/2133 4:04\",\"11/29/2133 4:04\",\"11/29/2133 6:00\",\"11/29/2133 7:00\",\"11/29/2133 8:00\",\"11/29/2133 9:00\",\"11/30/2133 0:00\",\"11/30/2133 12:00\",\"11/30/2133 14:30\",\"11/30/2133 15:30\",\"11/30/2133 15:31\",\"11/30/2133 15:31\",\"11/30/2133 16:00\",\"11/30/2133 17:00\",\"11/30/2133 18:00\",\"11/30/2133 19:00\",\"11/30/2133 1:00\",\"11/30/2133 1:00\",\"11/30/2133 20:00\",\"11/30/2133 21:00\",\"11/30/2133 22:00\",\"11/30/2133 23:00\",\"11/30/2133 4:00\",\"11/30/2133 4:41\",\"11/30/2133 4:41\",\"12/1/2133 0:00\",\"12/1/2133 0:00\",\"12/1/2133 0:00\",\"12/1/2133 10:45\",\"12/1/2133 11:30\",\"12/1/2133 12:00\",\"12/1/2133 12:45\",\"12/1/2133 1:00\",\"12/1/2133 2:00\",\"12/1/2133 3:00\",\"12/1/2133 4:00\",\"12/1/2133 5:00\",\"12/1/2133 6:00\",\"12/1/2133 7:00\",\"12/1/2133 7:57\",\"12/1/2133 7:57\",\"12/1/2133 8:00\",\"12/1/2133 9:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAQcEAAAAAAACBoQAAAAAAAIGRAAAAAAABgYUAAAAAAAGBhQAAAAAAAwG9AAAAAAABga0AAAAAAAABsQAAAAAAAYGpAAAAAAADAZkAAAAAAAMBmQAAAAAAA4GdAAAAAAAAAakAAAAAAAEBoQAAAAAAA4GdAAAAAAAAgZUAAAAAAAGBlQAAAAAAAYGRAAAAAAACAYEAAAAAAAIBgQAAAAAAAoGBAAAAAAABAXkAAAAAAAKBhQAAAAAAAoGFAAAAAAACgZkAAAAAAAMBbQAAAAAAAAGBAAAAAAABAYEAAAAAAAMBfQAAAAAAAYGFAAAAAAABAYEAAAAAAAABaQAAAAAAAAFpAAAAAAABAX0AAAAAAAEBZQAAAAAAAQGBAAAAAAABAYUAAAAAAAIBcQAAAAAAAgFxAAAAAAACAV0AAAAAAAIBVQAAAAAAAgFVAAAAAAACAV0AAAAAAAABXQAAAAAAAQFdAAAAAAADAWkAAAAAAAMBdQAAAAAAAQFxAAAAAAACgYEAAAAAAAGBiQAAAAAAAAGNAAAAAAABAY0AAAAAAAMBiQAAAAAAAYGFAAAAAAAAAXEAAAAAAAEBZQAAAAAAAQFVAAAAAAADAYEAAAAAAAEBUQAAAAAAAgE9AAAAAAABAVEAAAAAAAMBVQAAAAAAAQGBAAAAAAACgYEAAAAAAAKBgQAAAAAAAIGJAAAAAAABgYUAAAAAAAGBhQAAAAAAA4GJAAAAAAADAZEAAAAAAAGBjQAAAAAAAQGJAAAAAAAAAYEAAAAAAAIBbQAAAAAAAgFxAAAAAAADAWkAAAAAAAMBZQAAAAAAAwFNAAAAAAABAWkAAAAAAAEBaQAAAAAAAgF1AAAAAAACAW0AAAAAAAIBhQAAAAAAA4GBAAAAAAABgYEAAAAAAACBkQAAAAAAAAPh/AAAAAAAgZEAAAAAAAAD4fwAAAAAAAGNAAAAAAAAgY0AAAAAAACBjQAAAAAAAgGJAAAAAAADgYEAAAAAAAABhQAAAAAAAAF9AAAAAAAAAY0AAAAAAAEBeQAAAAAAAQFpAAAAAAADAYEAAAAAAAEBfQAAAAAAAgF1AAAAAAABAXEAAAAAAAEBcQAAAAAAAgFlAAAAAAACAWUAAAAAAAABeQAAAAAAAwFtAAAAAAACAXkAAAAAAAABdQAAAAAAAQF5AAAAAAABAX0AAAAAAAEBfQAAAAAAAAGBAAAAAAACgYkAAAAAAACBiQAAAAAAAIGJAAAAAAABgY0AAAAAAAKBgQAAAAAAAwGRAAAAAAAAgYkAAAAAAAGBhQAAAAAAAgF5AAAAAAACAXkAAAAAAAGBgQAAAAAAAQFtAAAAAAABAW0AAAAAAAIBjQAAAAAAAoGVAAAAAAABgY0AAAAAAAGBjQAAAAAAAAGNAAAAAAAAAY0AAAAAAAMBlQAAAAAAAwGFAAAAAAAAAX0AAAAAAAMBdQAAAAAAAQF1AAAAAAABAXUAAAAAAAEBeQAAAAAAAgFtAAAAAAACAW0AAAAAAAIBfQAAAAAAAgFxAAAAAAADAWUAAAAAAAIBgQAAAAAAAgFhAAAAAAABAV0AAAAAAAEBXQAAAAAAAAFlAAAAAAADAWEAAAAAAAABYQAAAAAAAAGFAAAAAAABAX0AAAAAAAABhQAAAAAAAYGRAAAAAAAAgY0AAAAAAAGBjQAAAAAAAwGRAAAAAAAAAXUAAAAAAAEBXQAAAAAAAwFRAAAAAAADAVUAAAAAAAABYQAAAAAAAwFlAAAAAAADAWUAAAAAAAABcQAAAAAAA4GFAAAAAAACgYUAAAAAAAABiQAAAAAAAgGBAAAAAAACAW0AAAAAAAGBhQAAAAAAAQGBAAAAAAABAYEAAAAAAAMBiQAAAAAAAAF9AAAAAAADAW0AAAAAAAIBaQAAAAAAAwFhAAAAAAADAWEAAAAAAAABbQAAAAAAAgFdAAAAAAADAV0AAAAAAAMBYQAAAAAAAwFRAAAAAAADAVEAAAAAAAABZQAAAAAAAgF9AAAAAAADAWEAAAAAAAABXQAAAAAAAgF1AAAAAAABAX0AAAAAAAGBjQAAAAAAAAGFAAAAAAAAAYUAAAAAAAOBiQAAAAAAAAGNAAAAAAABgZUAAAAAAAABnQAAAAAAAQGpAAAAAAABAakAAAAAAAMBrQAAAAAAAAGFAAAAAAACga0AAAAAAAMBqQAAAAAAA4GRAAAAAAACAYUAAAAAAAEBcQAAAAAAAQFlAAAAAAAAAXkAAAAAAAEBZQAAAAAAAAFxAAAAAAADAXEAAAAAAAIBWQAAAAAAAAFlAAAAAAAAAW0AAAAAAAIBWQAAAAAAAQFpAAAAAAACAVkAAAAAAAEBjQAAAAAAAAFNAAAAAAAAAVEAAAAAAAABdQAAAAAAAgF5AAAAAAACAW0AAAAAAAIBaQAAAAAAAgFtAAAAAAABAYkAAAAAAACBhQAAAAAAAYGBAAAAAAADgYEAAAAAAACBkQAAAAAAAwGBAAAAAAABAX0AAAAAAAIBgQAAAAAAAQGBAAAAAAABAYUAAAAAAAIBfQAAAAAAAgF9AAAAAAACgYEAAAAAAAABhQAAAAAAAoGBAAAAAAADAXEAAAAAAAABaQAAAAAAAwFZAAAAAAAAAVUAAAAAAAIBSQAAAAAAAgFJAAAAAAABAYUAAAAAAAEBgQAAAAAAAYGBAAAAAAAAAX0AAAAAAAMBeQAAAAAAAAFxAAAAAAADAXkAAAAAAAEBbQAAAAAAAQFtAAAAAAACAXkAAAAAAAEBcQAAAAAAA4GRAAAAAAAAAXkAAAAAAAIBbQAAAAAAAIGFAAAAAAAAgYUAAAAAAAEBjQAAAAAAAIGFAAAAAAACAYUAAAAAAAKBgQAAAAAAA4GBAAAAAAABAXEAAAAAAAABcQAAAAAAAAFlAAAAAAACAVkAAAAAAAEBWQAAAAAAAgFZAAAAAAABAUkAAAAAAAEBSQAAAAAAAwFlAAAAAAADAWUAAAAAAAMBcQAAAAAAAgF9AAAAAAABAXUAAAAAAAMBcQAAAAAAAQFlAAAAAAADAVUAAAAAAAMBVQAAAAAAAwFVAAAAAAACAVEAAAAAAAMBZQAAAAAAAgF1AAAAAAACAXkAAAAAAAHBwQAAAAAAAYG5AAAAAAAAA+H8AAAAAAIBlQAAAAAAAgGVAAAAAAACAakAAAAAAAMBoQAAAAAAAwGVAAAAAAADgaEAAAAAAAEBbQAAAAAAAQFtAAAAAAADgZUAAAAAAAKBmQAAAAAAAYGZAAAAAAAAgZkAAAAAAAIBgQAAAAAAAQF1AAAAAAABAXUAAAAAAAIBlQAAAAAAAYGFAAAAAAABgYUAAAAAAAEBTQAAAAAAAgEhAAAAAAACAV0AAAAAAAIBWQAAAAAAAIGFAAAAAAAAgYEAAAAAAAMBYQAAAAAAAwFRAAAAAAACATkAAAAAAAABLQAAAAAAAYGNAAAAAAADAWUAAAAAAAMBZQAAAAAAAAF1AAAAAAADAV0A=\",\"dtype\":\"float64\",\"shape\":[328]}}}],\"references\":[]},\"root\":\"96005\"}", "21": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/2/2167 23:17\",\"11/2/2167 9:50\",\"11/3/2167 4:48\",\"11/4/2167 10:03\",\"11/4/2167 16:37\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 124880\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/2/2167 23:17\",\"11/2/2167 9:50\",\"11/3/2167 4:48\",\"11/4/2167 10:03\",\"11/4/2167 16:37\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAZkAAAAAAAIBbQAAAAAAAQFxAAAAAAADgZUAAAAAAAEBtQA==\",\"dtype\":\"float64\",\"shape\":[5]}}}],\"references\":[]},\"root\":\"96005\"}", "22": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/22/2145 12:00\",\"11/22/2145 17:00\",\"11/22/2145 18:00\",\"11/22/2145 19:00\",\"11/22/2145 20:00\",\"11/22/2145 22:00\",\"11/22/2145 23:00\",\"11/22/2145 3:00\",\"11/22/2145 6:00\",\"11/22/2145 8:00\",\"11/23/2145 12:00\",\"11/23/2145 12:26\",\"11/23/2145 17:00\",\"11/23/2145 22:00\",\"11/23/2145 5:23\",\"11/23/2145 6:00\",\"11/23/2145 8:00\",\"11/24/2145 13:00\",\"11/24/2145 17:00\",\"11/24/2145 19:16\",\"11/24/2145 21:00\",\"11/24/2145 2:00\",\"11/24/2145 3:49\",\"11/24/2145 5:28\",\"11/24/2145 9:00\",\"11/25/2145 13:00\",\"11/25/2145 18:00\",\"11/25/2145 22:00\",\"11/25/2145 5:39\",\"11/25/2145 8:00\",\"11/26/2145 4:24\",\"11/27/2145 2:00\",\"11/27/2145 2:25\",\"11/27/2145 2:36\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 119825\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/22/2145 12:00\",\"11/22/2145 17:00\",\"11/22/2145 18:00\",\"11/22/2145 19:00\",\"11/22/2145 20:00\",\"11/22/2145 22:00\",\"11/22/2145 23:00\",\"11/22/2145 3:00\",\"11/22/2145 6:00\",\"11/22/2145 6:00\",\"11/22/2145 8:00\",\"11/23/2145 12:00\",\"11/23/2145 12:26\",\"11/23/2145 17:00\",\"11/23/2145 22:00\",\"11/23/2145 5:23\",\"11/23/2145 6:00\",\"11/23/2145 8:00\",\"11/24/2145 13:00\",\"11/24/2145 17:00\",\"11/24/2145 19:16\",\"11/24/2145 21:00\",\"11/24/2145 2:00\",\"11/24/2145 3:49\",\"11/24/2145 5:28\",\"11/24/2145 9:00\",\"11/25/2145 13:00\",\"11/25/2145 18:00\",\"11/25/2145 22:00\",\"11/25/2145 5:39\",\"11/25/2145 8:00\",\"11/26/2145 4:24\",\"11/27/2145 2:00\",\"11/27/2145 2:25\",\"11/27/2145 2:36\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgbkAAAAAAAABCQAAAAAAAgExAAAAAAADAXEAAAAAAAIBeQAAAAAAAwFhAAAAAAAAAXUAAAAAAAKB6QAAAAAAAcHpAAAAAAABwdkAAAAAAAPBzQAAAAAAAAHdAAAAAAAAAc0AAAAAAAGBqQAAAAAAAQG9AAAAAAABAY0AAAAAAAMBlQAAAAAAAgFpAAAAAAAAAXkAAAAAAANBxQAAAAAAAQF1AAAAAAABgaEAAAAAAAOBqQAAAAAAAgGhAAAAAAADgaUAAAAAAAEBzQAAAAAAAAGBAAAAAAAAgZUAAAAAAAOBtQAAAAAAAQFtAAAAAAAAAaUAAAAAAAKBhQAAAAAAAYGRAAAAAAAAAWUAAAAAAAEBeQA==\",\"dtype\":\"float64\",\"shape\":[35]}}}],\"references\":[]},\"root\":\"96005\"}", "23": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/24/2164 12:17\",\"11/24/2164 17:19\",\"11/25/2164 13:06\",\"11/25/2164 17:01\",\"11/25/2164 22:20\",\"11/25/2164 4:26\",\"11/25/2164 8:29\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 135406\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/24/2164 12:17\",\"11/24/2164 17:19\",\"11/25/2164 13:06\",\"11/25/2164 17:01\",\"11/25/2164 22:20\",\"11/25/2164 4:26\",\"11/25/2164 8:29\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAXUAAAAAAAMBiQAAAAAAAYGRAAAAAAABgYkAAAAAAAOBnQAAAAAAAwFxAAAAAAAAgYUA=\",\"dtype\":\"float64\",\"shape\":[7]}}}],\"references\":[]},\"root\":\"96005\"}", "24": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/25/2116 3:35\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 123253\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/25/2116 3:35\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAZ0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "25": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/6/2140 11:00\",\"11/6/2140 12:00\",\"11/6/2140 13:00\",\"11/6/2140 14:00\",\"11/6/2140 16:00\",\"11/6/2140 16:18\",\"11/6/2140 18:00\",\"11/6/2140 19:00\",\"11/6/2140 20:30\",\"11/6/2140 22:00\",\"11/7/2140 11:00\",\"11/7/2140 12:30\",\"11/7/2140 14:00\",\"11/7/2140 16:00\",\"11/7/2140 18:00\",\"11/7/2140 19:00\",\"11/7/2140 1:00\",\"11/7/2140 20:00\",\"11/7/2140 21:00\",\"11/7/2140 22:00\",\"11/7/2140 2:00\",\"11/7/2140 3:00\",\"11/7/2140 4:00\",\"11/7/2140 4:11\",\"11/7/2140 5:00\",\"11/7/2140 7:00\",\"11/7/2140 8:00\",\"11/7/2140 9:00\",\"11/8/2140 0:00\",\"11/8/2140 10:45\",\"11/8/2140 15:00\",\"11/8/2140 1:00\",\"11/8/2140 21:00\",\"11/8/2140 23:00\",\"11/8/2140 2:00\",\"11/8/2140 3:00\",\"11/8/2140 4:00\",\"11/8/2140 6:00\",\"11/8/2140 8:00\",\"11/8/2140 9:00\",\"11/9/2140 11:00\",\"11/9/2140 3:10\",\"11/9/2140 5:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 168006\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/6/2140 11:00\",\"11/6/2140 12:00\",\"11/6/2140 12:00\",\"11/6/2140 12:00\",\"11/6/2140 13:00\",\"11/6/2140 14:00\",\"11/6/2140 16:00\",\"11/6/2140 16:18\",\"11/6/2140 16:18\",\"11/6/2140 18:00\",\"11/6/2140 19:00\",\"11/6/2140 20:30\",\"11/6/2140 20:30\",\"11/6/2140 22:00\",\"11/7/2140 11:00\",\"11/7/2140 12:30\",\"11/7/2140 14:00\",\"11/7/2140 16:00\",\"11/7/2140 18:00\",\"11/7/2140 19:00\",\"11/7/2140 1:00\",\"11/7/2140 20:00\",\"11/7/2140 21:00\",\"11/7/2140 22:00\",\"11/7/2140 2:00\",\"11/7/2140 3:00\",\"11/7/2140 4:00\",\"11/7/2140 4:11\",\"11/7/2140 4:11\",\"11/7/2140 5:00\",\"11/7/2140 5:00\",\"11/7/2140 5:00\",\"11/7/2140 7:00\",\"11/7/2140 8:00\",\"11/7/2140 9:00\",\"11/8/2140 0:00\",\"11/8/2140 10:45\",\"11/8/2140 15:00\",\"11/8/2140 1:00\",\"11/8/2140 21:00\",\"11/8/2140 23:00\",\"11/8/2140 2:00\",\"11/8/2140 3:00\",\"11/8/2140 3:00\",\"11/8/2140 3:00\",\"11/8/2140 4:00\",\"11/8/2140 6:00\",\"11/8/2140 8:00\",\"11/8/2140 9:00\",\"11/9/2140 11:00\",\"11/9/2140 3:10\",\"11/9/2140 3:10\",\"11/9/2140 5:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAaEAAAAAAAABtQAAAAAAAoGVAAAAAAACgZUAAAAAAAIBlQAAAAAAAYGpAAAAAAAAgZEAAAAAAAEBjQAAAAAAAQGNAAAAAAADAX0AAAAAAAIBdQAAAAAAAwF5AAAAAAADAXkAAAAAAAABgQAAAAAAAQGJAAAAAAACgYkAAAAAAAEBkQAAAAAAAwGBAAAAAAADAYUAAAAAAAABmQAAAAAAAAFdAAAAAAACgYEAAAAAAAGBiQAAAAAAAIGBAAAAAAABAZkAAAAAAAKBkQAAAAAAAIGFAAAAAAACAXkAAAAAAAIBeQAAAAAAAwFtAAAAAAADAW0AAAAAAAABdQAAAAAAAgFdAAAAAAACAWEAAAAAAAIBdQAAAAAAAwFVAAAAAAAAAV0AAAAAAAKBgQAAAAAAAYGFAAAAAAAAAZEAAAAAAAOBkQAAAAAAAwFdAAAAAAAAgZEAAAAAAAGBiQAAAAAAAIGRAAAAAAADAX0AAAAAAAEBcQAAAAAAAQFlAAAAAAAAAWUAAAAAAAEBqQAAAAAAA4GlAAAAAAADgaUAAAAAAAABmQA==\",\"dtype\":\"float64\",\"shape\":[53]}}}],\"references\":[]},\"root\":\"96005\"}", "26": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"11/6/2197 22:00\",\"11/7/2197 16:00\",\"11/7/2197 22:00\",\"11/7/2197 7:00\",\"11/7/2197 8:34\",\"11/8/2197 12:00\",\"11/8/2197 17:00\",\"11/8/2197 17:23\",\"11/8/2197 3:37\",\"11/9/2197 12:00\",\"11/9/2197 17:30\",\"11/9/2197 22:30\",\"11/9/2197 2:49\",\"11/9/2197 9:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 102607\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"11/6/2197 22:00\",\"11/7/2197 16:00\",\"11/7/2197 22:00\",\"11/7/2197 7:00\",\"11/7/2197 8:34\",\"11/8/2197 12:00\",\"11/8/2197 17:00\",\"11/8/2197 17:23\",\"11/8/2197 3:37\",\"11/9/2197 12:00\",\"11/9/2197 17:30\",\"11/9/2197 22:30\",\"11/9/2197 2:49\",\"11/9/2197 9:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADgY0AAAAAAAKBoQAAAAAAAoG1AAAAAAABAU0AAAAAAAABgQAAAAAAAAGVAAAAAAACAcUAAAAAAAOBuQAAAAAAAQGNAAAAAAAAAakAAAAAAAEBeQAAAAAAAoGJAAAAAAACAXUAAAAAAAGBhQA==\",\"dtype\":\"float64\",\"shape\":[14]}}}],\"references\":[]},\"root\":\"96005\"}", "27": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"12/24/2124 13:16\",\"12/25/2124 10:00\",\"12/25/2124 21:00\",\"12/25/2124 2:59\",\"12/25/2124 3:18\",\"12/25/2124 4:00\",\"12/25/2124 8:00\",\"12/26/2124 0:00\",\"12/26/2124 3:00\",\"12/26/2124 5:00\",\"12/26/2124 7:00\",\"12/26/2124 8:22\",\"12/26/2124 8:27\",\"12/26/2124 9:46\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 110348\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"12/24/2124 13:16\",\"12/25/2124 10:00\",\"12/25/2124 21:00\",\"12/25/2124 2:59\",\"12/25/2124 3:18\",\"12/25/2124 4:00\",\"12/25/2124 8:00\",\"12/26/2124 0:00\",\"12/26/2124 3:00\",\"12/26/2124 3:00\",\"12/26/2124 5:00\",\"12/26/2124 7:00\",\"12/26/2124 8:22\",\"12/26/2124 8:27\",\"12/26/2124 9:46\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACATEAAAAAAAIBWQAAAAAAAAFBAAAAAAAAAS0AAAAAAAEBQQAAAAAAAwFVAAAAAAACASkAAAAAAAIBXQAAAAAAAgE9AAAAAAAAAVUAAAAAAAEBQQAAAAAAAwFdAAAAAAAAwcEAAAAAAAIBLQAAAAAAAQFVA\",\"dtype\":\"float64\",\"shape\":[15]}}}],\"references\":[]},\"root\":\"96005\"}", "28": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"12/26/2114 12:00\",\"12/26/2114 18:00\",\"12/26/2114 6:00\",\"12/26/2114 6:01\",\"12/27/2114 0:00\",\"12/27/2114 11:00\",\"12/27/2114 18:00\",\"12/27/2114 4:15\",\"12/27/2114 6:00\",\"12/28/2114 0:00\",\"12/28/2114 10:00\",\"12/28/2114 10:56\",\"12/28/2114 12:00\",\"12/28/2114 13:00\",\"12/28/2114 14:00\",\"12/28/2114 15:00\",\"12/28/2114 16:00\",\"12/28/2114 17:00\",\"12/28/2114 18:00\",\"12/28/2114 19:00\",\"12/28/2114 20:00\",\"12/28/2114 21:00\",\"12/28/2114 22:00\",\"12/28/2114 3:57\",\"12/28/2114 6:55\",\"12/29/2114 10:00\",\"12/29/2114 16:00\",\"12/29/2114 16:10\",\"12/29/2114 1:00\",\"12/29/2114 3:57\",\"12/29/2114 6:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 169807\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"12/26/2114 12:00\",\"12/26/2114 18:00\",\"12/26/2114 6:00\",\"12/26/2114 6:01\",\"12/27/2114 0:00\",\"12/27/2114 11:00\",\"12/27/2114 18:00\",\"12/27/2114 4:15\",\"12/27/2114 6:00\",\"12/28/2114 0:00\",\"12/28/2114 10:00\",\"12/28/2114 10:56\",\"12/28/2114 12:00\",\"12/28/2114 13:00\",\"12/28/2114 14:00\",\"12/28/2114 15:00\",\"12/28/2114 16:00\",\"12/28/2114 17:00\",\"12/28/2114 18:00\",\"12/28/2114 19:00\",\"12/28/2114 20:00\",\"12/28/2114 21:00\",\"12/28/2114 22:00\",\"12/28/2114 3:57\",\"12/28/2114 6:55\",\"12/29/2114 10:00\",\"12/29/2114 16:00\",\"12/29/2114 16:10\",\"12/29/2114 1:00\",\"12/29/2114 3:57\",\"12/29/2114 6:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABgZ0AAAAAAAOBjQAAAAAAA4GVAAAAAAAAAZkAAAAAAAEBkQAAAAAAAgGZAAAAAAAAgaUAAAAAAAMBmQAAAAAAAgGVAAAAAAACAZkAAAAAAAEBkQAAAAAAAYGNAAAAAAAAAbEAAAAAAACBoQAAAAAAA4GZAAAAAAADgZkAAAAAAACBiQAAAAAAAgFxAAAAAAABAWkAAAAAAAABSQAAAAAAAAE5AAAAAAADAU0AAAAAAAIBUQAAAAAAAgGNAAAAAAADgZUAAAAAAAIBfQAAAAAAAwGhAAAAAAABgZkAAAAAAAABeQAAAAAAAgFlAAAAAAAAAX0A=\",\"dtype\":\"float64\",\"shape\":[31]}}}],\"references\":[]},\"root\":\"96005\"}", "29": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"2/12/2124 18:00\",\"2/12/2124 19:00\",\"2/12/2124 22:00\",\"2/12/2124 4:00\",\"2/12/2124 4:45\",\"2/13/2124 12:00\",\"2/13/2124 16:20\",\"2/13/2124 17:00\",\"2/13/2124 22:00\",\"2/13/2124 22:28\",\"2/13/2124 3:44\",\"2/13/2124 9:45\",\"2/14/2124 11:02\",\"2/14/2124 12:00\",\"2/14/2124 3:59\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 174069\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"2/12/2124 18:00\",\"2/12/2124 19:00\",\"2/12/2124 22:00\",\"2/12/2124 4:00\",\"2/12/2124 4:45\",\"2/13/2124 12:00\",\"2/13/2124 16:20\",\"2/13/2124 17:00\",\"2/13/2124 22:00\",\"2/13/2124 22:28\",\"2/13/2124 3:44\",\"2/13/2124 9:45\",\"2/14/2124 11:02\",\"2/14/2124 12:00\",\"2/14/2124 3:59\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAYUAAAAAAACBjQAAAAAAAIGJAAAAAAACAY0AAAAAAAEBhQAAAAAAAwGVAAAAAAAAAaUAAAAAAAABvQAAAAAAAgGZAAAAAAABgYkAAAAAAAKBiQAAAAAAAgGNAAAAAAABgY0AAAAAAAABiQAAAAAAAgGJA\",\"dtype\":\"float64\",\"shape\":[15]}}}],\"references\":[]},\"root\":\"96005\"}", "30": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"2/13/2196 10:43\",\"2/13/2196 14:00\",\"2/13/2196 6:00\",\"2/13/2196 9:00\",\"2/14/2196 14:00\",\"2/14/2196 14:49\",\"2/14/2196 1:22\",\"2/14/2196 20:30\",\"2/14/2196 8:00\",\"2/15/2196 10:00\",\"2/15/2196 13:03\",\"2/15/2196 16:00\",\"2/15/2196 21:00\",\"2/15/2196 4:21\",\"2/16/2196 10:00\",\"2/16/2196 16:00\",\"2/16/2196 2:11\",\"2/19/2196 22:34\",\"2/20/2196 10:00\",\"2/20/2196 14:55\",\"2/20/2196 16:00\",\"2/20/2196 22:00\",\"2/20/2196 4:00\",\"2/20/2196 5:04\",\"2/20/2196 7:02\",\"2/21/2196 10:00\",\"2/21/2196 16:00\",\"2/21/2196 1:37\",\"2/21/2196 4:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 171739\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"2/13/2196 10:43\",\"2/13/2196 14:00\",\"2/13/2196 6:00\",\"2/13/2196 9:00\",\"2/14/2196 14:00\",\"2/14/2196 14:49\",\"2/14/2196 1:22\",\"2/14/2196 20:30\",\"2/14/2196 8:00\",\"2/15/2196 10:00\",\"2/15/2196 13:03\",\"2/15/2196 16:00\",\"2/15/2196 21:00\",\"2/15/2196 4:21\",\"2/16/2196 10:00\",\"2/16/2196 16:00\",\"2/16/2196 2:11\",\"2/19/2196 22:34\",\"2/20/2196 10:00\",\"2/20/2196 14:55\",\"2/20/2196 16:00\",\"2/20/2196 22:00\",\"2/20/2196 4:00\",\"2/20/2196 5:04\",\"2/20/2196 7:02\",\"2/21/2196 10:00\",\"2/21/2196 16:00\",\"2/21/2196 1:37\",\"2/21/2196 4:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAW0AAAAAAAPBxQAAAAAAAAGJAAAAAAADAa0AAAAAAAABtQAAAAAAAoGhAAAAAAABgaEAAAAAAAKBlQAAAAAAA4GJAAAAAAABAbUAAAAAAAMBrQAAAAAAAwG5AAAAAAACgbkAAAAAAAEBnQAAAAAAAAHFAAAAAAAAgaUAAAAAAACBnQAAAAAAAQGhAAAAAAABAZUAAAAAAAIBaQAAAAAAAYGFAAAAAAAAAWkAAAAAAACBvQAAAAAAAgGlAAAAAAABAZkAAAAAAAMBnQAAAAAAAYHVAAAAAAADAYEAAAAAAAGBoQA==\",\"dtype\":\"float64\",\"shape\":[29]}}}],\"references\":[]},\"root\":\"96005\"}", "31": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"2/14/2164 1:16\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 199369\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"2/14/2164 1:16\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgY0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "32": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"2/16/2169 10:26\",\"2/28/2169 10:19\",\"3/19/2169 0:22\",\"3/19/2169 3:54\",\"3/19/2169 4:45\",\"3/19/2169 8:14\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 131643\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"2/16/2169 10:26\",\"2/28/2169 10:19\",\"3/19/2169 0:22\",\"3/19/2169 3:54\",\"3/19/2169 4:45\",\"3/19/2169 8:14\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAVkAAAAAAAABgQAAAAAAAgEpAAAAAAAAAOkAAAAAAAEBeQAAAAAAAgEVA\",\"dtype\":\"float64\",\"shape\":[6]}}}],\"references\":[]},\"root\":\"96005\"}", "33": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"2/20/2108 22:23\",\"2/20/2108 23:00\",\"2/21/2108 11:00\",\"2/21/2108 18:00\",\"2/21/2108 22:00\",\"2/21/2108 5:09\",\"2/21/2108 7:00\",\"2/21/2108 8:00\",\"2/22/2108 2:00\",\"2/22/2108 2:32\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 135108\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"2/20/2108 22:23\",\"2/20/2108 23:00\",\"2/21/2108 11:00\",\"2/21/2108 18:00\",\"2/21/2108 22:00\",\"2/21/2108 5:09\",\"2/21/2108 7:00\",\"2/21/2108 8:00\",\"2/22/2108 2:00\",\"2/22/2108 2:32\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACgbkAAAAAAAJBwQAAAAAAAAGBAAAAAAAAAZkAAAAAAAABoQAAAAAAAgGVAAAAAAABgaUAAAAAAAABsQAAAAAAAQFtAAAAAAACAXUA=\",\"dtype\":\"float64\",\"shape\":[10]}}}],\"references\":[]},\"root\":\"96005\"}", "34": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"2/24/2164 10:45\",\"2/24/2164 13:00\",\"2/24/2164 15:00\",\"2/24/2164 17:00\",\"2/24/2164 5:04\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 175858\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"2/24/2164 10:45\",\"2/24/2164 13:00\",\"2/24/2164 15:00\",\"2/24/2164 17:00\",\"2/24/2164 5:04\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAPEAAAAAAAABYQAAAAAAAwFNAAAAAAADAUUAAAAAAAEBaQA==\",\"dtype\":\"float64\",\"shape\":[5]}}}],\"references\":[]},\"root\":\"96005\"}", "35": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"2/29/2172 13:25\",\"2/29/2172 15:50\",\"2/29/2172 3:14\",\"3/1/2172 4:20\",\"3/10/2172 22:12\",\"3/10/2172 2:58\",\"3/11/2172 3:13\",\"3/12/2172 4:00\",\"3/2/2172 5:09\",\"3/3/2172 15:20\",\"3/3/2172 22:15\",\"3/3/2172 3:41\",\"3/4/2172 10:06\",\"3/4/2172 16:09\",\"3/4/2172 16:15\",\"3/4/2172 16:26\",\"3/4/2172 22:09\",\"3/4/2172 4:00\",\"3/4/2172 9:44\",\"3/5/2172 16:09\",\"3/5/2172 22:09\",\"3/5/2172 4:09\",\"3/5/2172 9:59\",\"3/6/2172 4:19\",\"3/7/2172 3:57\",\"3/8/2172 3:51\",\"3/9/2172 3:02\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 135367\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"2/29/2172 13:25\",\"2/29/2172 15:50\",\"2/29/2172 3:14\",\"3/1/2172 4:20\",\"3/10/2172 22:12\",\"3/10/2172 2:58\",\"3/11/2172 3:13\",\"3/12/2172 4:00\",\"3/2/2172 5:09\",\"3/3/2172 15:20\",\"3/3/2172 22:15\",\"3/3/2172 3:41\",\"3/4/2172 10:06\",\"3/4/2172 16:09\",\"3/4/2172 16:15\",\"3/4/2172 16:26\",\"3/4/2172 22:09\",\"3/4/2172 4:00\",\"3/4/2172 9:44\",\"3/5/2172 16:09\",\"3/5/2172 22:09\",\"3/5/2172 4:09\",\"3/5/2172 9:59\",\"3/6/2172 4:19\",\"3/7/2172 3:57\",\"3/8/2172 3:51\",\"3/9/2172 3:02\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAWUAAAAAAAIBUQAAAAAAAgFxAAAAAAACAWEAAAAAAAMBiQAAAAAAAgFFAAAAAAACgZUAAAAAAADBxQAAAAAAAwFJAAAAAAADAV0AAAAAAAMBaQAAAAAAAIGdAAAAAAAAAWEAAAAAAAABaQAAAAAAAwFtAAAAAAAAAWEAAAAAAAABqQAAAAAAAoGBAAAAAAACAXEAAAAAAAGBmQAAAAAAA4GVAAAAAAACAbEAAAAAAAOBmQAAAAAAAgGdAAAAAAAAATkAAAAAAAABRQAAAAAAAgEtA\",\"dtype\":\"float64\",\"shape\":[27]}}}],\"references\":[]},\"root\":\"96005\"}", "36": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"3/14/2170 13:12\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 137423\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"3/14/2170 13:12\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAdUA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "37": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"3/2/2179 21:37\",\"3/3/2179 11:45\",\"3/3/2179 1:11\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 167408\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"3/2/2179 21:37\",\"3/3/2179 11:45\",\"3/3/2179 1:11\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAPkAAAAAAAIBQQAAAAAAAAD5A\",\"dtype\":\"float64\",\"shape\":[3]}}}],\"references\":[]},\"root\":\"96005\"}", "38": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"3/27/2172 12:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 173921\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"3/27/2172 12:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABwcUA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "39": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"3/7/2147 15:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 130986\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"3/7/2147 15:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAW0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "40": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"4/10/2161 10:59\",\"4/10/2161 12:34\",\"4/10/2161 16:15\",\"4/10/2161 18:05\",\"4/10/2161 22:14\",\"4/10/2161 2:57\",\"4/11/2161 21:00\",\"4/11/2161 22:30\",\"4/11/2161 23:53\",\"4/11/2161 2:12\",\"4/12/2161 10:08\",\"4/12/2161 10:55\",\"4/12/2161 11:25\",\"4/12/2161 12:18\",\"4/12/2161 13:45\",\"4/12/2161 16:24\",\"4/12/2161 18:00\",\"4/12/2161 19:27\",\"4/12/2161 22:38\",\"4/12/2161 23:03\",\"4/12/2161 23:42\",\"4/12/2161 9:33\",\"4/13/2161 10:38\",\"4/13/2161 11:57\",\"4/13/2161 14:23\",\"4/13/2161 16:21\",\"4/13/2161 18:18\",\"4/13/2161 2:33\",\"4/13/2161 4:57\",\"4/13/2161 6:35\",\"4/13/2161 8:20\",\"4/13/2161 9:17\",\"4/9/2161 10:25\",\"4/9/2161 12:05\",\"4/9/2161 13:02\",\"4/9/2161 14:17\",\"4/9/2161 15:06\",\"4/9/2161 16:07\",\"4/9/2161 17:34\",\"4/9/2161 21:29\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 166939\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"4/10/2161 10:59\",\"4/10/2161 12:34\",\"4/10/2161 16:15\",\"4/10/2161 18:05\",\"4/10/2161 22:14\",\"4/10/2161 2:57\",\"4/11/2161 21:00\",\"4/11/2161 22:30\",\"4/11/2161 23:53\",\"4/11/2161 2:12\",\"4/12/2161 10:08\",\"4/12/2161 10:55\",\"4/12/2161 11:25\",\"4/12/2161 12:18\",\"4/12/2161 13:45\",\"4/12/2161 16:24\",\"4/12/2161 18:00\",\"4/12/2161 19:27\",\"4/12/2161 22:38\",\"4/12/2161 23:03\",\"4/12/2161 23:42\",\"4/12/2161 9:33\",\"4/13/2161 10:38\",\"4/13/2161 11:57\",\"4/13/2161 14:23\",\"4/13/2161 16:21\",\"4/13/2161 18:18\",\"4/13/2161 2:33\",\"4/13/2161 4:57\",\"4/13/2161 6:35\",\"4/13/2161 8:20\",\"4/13/2161 9:17\",\"4/9/2161 10:25\",\"4/9/2161 12:05\",\"4/9/2161 13:02\",\"4/9/2161 14:17\",\"4/9/2161 15:06\",\"4/9/2161 16:07\",\"4/9/2161 17:34\",\"4/9/2161 21:29\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAU0AAAAAAAIBYQAAAAAAAoGFAAAAAAADAYkAAAAAAAMBoQAAAAAAAQFpAAAAAAACAZEAAAAAAAOBhQAAAAAAAgGBAAAAAAACgYUAAAAAAAEBdQAAAAAAAwFxAAAAAAABAW0AAAAAAAMBdQAAAAAAAwF5AAAAAAAAAW0AAAAAAAEBcQAAAAAAAgG9AAAAAAACgd0AAAAAAANB1QAAAAAAA0HVAAAAAAACAYEAAAAAAACB8QAAAAAAAQHNAAAAAAACAb0AAAAAAAKBxQAAAAAAAwGBAAAAAAABQeUAAAAAAAHB6QAAAAAAAUHpAAAAAAABwe0AAAAAAAKB7QAAAAAAAgE5AAAAAAADAUEAAAAAAAEBZQAAAAAAAYGNAAAAAAAAgZkAAAAAAAOBiQAAAAAAAoGBAAAAAAAAgYEA=\",\"dtype\":\"float64\",\"shape\":[40]}}}],\"references\":[]},\"root\":\"96005\"}", "41": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"4/11/2161 1:25\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 182998\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"4/11/2161 1:25\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACgZkA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "42": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"4/17/2153 10:29\",\"4/17/2153 12:39\",\"4/17/2153 14:25\",\"4/17/2153 15:32\",\"4/17/2153 17:32\",\"4/17/2153 19:35\",\"4/17/2153 1:08\",\"4/17/2153 1:43\",\"4/17/2153 21:00\",\"4/17/2153 21:50\",\"4/17/2153 6:22\",\"4/17/2153 7:08\",\"4/17/2153 7:57\",\"4/17/2153 8:33\",\"4/17/2153 9:11\",\"4/18/2153 0:19\",\"4/18/2153 10:51\",\"4/18/2153 12:21\",\"4/18/2153 14:00\",\"4/18/2153 14:41\",\"4/18/2153 17:36\",\"4/18/2153 20:50\",\"4/18/2153 21:53\",\"4/18/2153 22:56\",\"4/18/2153 2:05\",\"4/18/2153 6:33\",\"4/18/2153 8:23\",\"4/19/2153 18:50\",\"4/20/2153 15:56\",\"4/20/2153 3:25\",\"4/21/2153 11:00\",\"4/21/2153 13:00\",\"4/21/2153 14:45\",\"4/21/2153 16:00\",\"4/21/2153 17:00\",\"4/21/2153 18:40\",\"4/21/2153 1:00\",\"4/21/2153 20:19\",\"4/21/2153 21:30\",\"4/21/2153 22:51\",\"4/21/2153 8:31\",\"4/21/2153 9:30\",\"4/22/2153 1:54\",\"4/22/2153 8:05\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 133974\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"4/17/2153 10:29\",\"4/17/2153 12:39\",\"4/17/2153 14:25\",\"4/17/2153 15:32\",\"4/17/2153 17:32\",\"4/17/2153 19:35\",\"4/17/2153 1:08\",\"4/17/2153 1:43\",\"4/17/2153 21:00\",\"4/17/2153 21:50\",\"4/17/2153 6:22\",\"4/17/2153 7:08\",\"4/17/2153 7:57\",\"4/17/2153 8:33\",\"4/17/2153 9:11\",\"4/18/2153 0:19\",\"4/18/2153 10:51\",\"4/18/2153 12:21\",\"4/18/2153 14:00\",\"4/18/2153 14:41\",\"4/18/2153 17:36\",\"4/18/2153 20:50\",\"4/18/2153 21:53\",\"4/18/2153 22:56\",\"4/18/2153 2:05\",\"4/18/2153 6:33\",\"4/18/2153 8:23\",\"4/19/2153 18:50\",\"4/20/2153 15:56\",\"4/20/2153 3:25\",\"4/21/2153 11:00\",\"4/21/2153 13:00\",\"4/21/2153 14:45\",\"4/21/2153 16:00\",\"4/21/2153 17:00\",\"4/21/2153 18:40\",\"4/21/2153 1:00\",\"4/21/2153 20:19\",\"4/21/2153 21:30\",\"4/21/2153 22:51\",\"4/21/2153 8:31\",\"4/21/2153 9:30\",\"4/22/2153 1:54\",\"4/22/2153 8:05\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAakAAAAAAAEBlQAAAAAAAoGFAAAAAAACAX0AAAAAAAABYQAAAAAAAQFRAAAAAAACAZkAAAAAAAIBkQAAAAAAAQFhAAAAAAABAVEAAAAAAAMBrQAAAAAAAIG5AAAAAAABAbkAAAAAAAIBtQAAAAAAAwGtAAAAAAAAAWkAAAAAAAIBbQAAAAAAAQFpAAAAAAAAAWUAAAAAAAEBaQAAAAAAAQFdAAAAAAABAVEAAAAAAAIBUQAAAAAAAAFVAAAAAAAAAW0AAAAAAAIBeQAAAAAAAgF1AAAAAAACAU0AAAAAAAIBcQAAAAAAAgFhAAAAAAABAVUAAAAAAAABTQAAAAAAAgE9AAAAAAAAAWEAAAAAAAABgQAAAAAAAgFtAAAAAAAAAZ0AAAAAAAMBiQAAAAAAAAFdAAAAAAABAWEAAAAAAAEBaQAAAAAAAgFNAAAAAAADAWUAAAAAAAABdQA==\",\"dtype\":\"float64\",\"shape\":[44]}}}],\"references\":[]},\"root\":\"96005\"}", "43": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"4/21/2145 2:50\",\"4/21/2145 5:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 135086\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"4/21/2145 2:50\",\"4/21/2145 5:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAb0AAAAAAAGBvQA==\",\"dtype\":\"float64\",\"shape\":[2]}}}],\"references\":[]},\"root\":\"96005\"}", "44": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"4/6/2157 15:28\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 193914\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"4/6/2157 15:28\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAVkA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "45": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"5/13/2153 11:16\",\"5/13/2153 16:51\",\"5/13/2153 17:08\",\"5/13/2153 21:08\",\"5/13/2153 9:11\",\"5/14/2153 0:18\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 169889\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"5/13/2153 11:16\",\"5/13/2153 16:51\",\"5/13/2153 17:08\",\"5/13/2153 21:08\",\"5/13/2153 9:11\",\"5/14/2153 0:18\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAZEAAAAAAAKBlQAAAAAAA4GNAAAAAAABAW0AAAAAAAIBsQAAAAAAAwG1A\",\"dtype\":\"float64\",\"shape\":[6]}}}],\"references\":[]},\"root\":\"96005\"}", "46": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"5/18/2115 6:44\",\"5/19/2115 18:06\",\"5/19/2115 4:18\",\"5/20/2115 5:08\",\"5/22/2115 21:46\",\"5/23/2115 4:31\",\"5/24/2115 3:19\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 142053\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"5/18/2115 6:44\",\"5/19/2115 18:06\",\"5/19/2115 4:18\",\"5/20/2115 5:08\",\"5/22/2115 21:46\",\"5/23/2115 4:31\",\"5/24/2115 3:19\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgZkAAAAAAAABXQAAAAAAAYGZAAAAAAABgYEAAAAAAAABaQAAAAAAAwFRAAAAAAAAgYUA=\",\"dtype\":\"float64\",\"shape\":[7]}}}],\"references\":[]},\"root\":\"96005\"}", "47": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"5/23/2199 6:20\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 137241\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"5/23/2199 6:20\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAY0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "48": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"5/25/2180 15:45\",\"5/25/2180 3:57\",\"5/26/2180 3:53\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 189563\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"5/25/2180 15:45\",\"5/25/2180 3:57\",\"5/26/2180 3:53\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAZkAAAAAAAEBdQAAAAAAAgGNA\",\"dtype\":\"float64\",\"shape\":[3]}}}],\"references\":[]},\"root\":\"96005\"}", "49": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"5/29/2206 21:33\",\"6/1/2206 19:45\",\"6/2/2206 4:07\",\"6/6/2206 17:31\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 153362\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"5/29/2206 21:33\",\"6/1/2206 19:45\",\"6/2/2206 4:07\",\"6/6/2206 17:31\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgYkAAAAAAAMBXQAAAAAAAwG1AAAAAAAAAXUA=\",\"dtype\":\"float64\",\"shape\":[4]}}}],\"references\":[]},\"root\":\"96005\"}", "50": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"5/6/2118 4:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 128603\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"5/6/2118 4:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAW0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "51": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"5/7/2111 18:45\",\"5/8/2111 14:07\",\"5/8/2111 21:48\",\"5/8/2111 2:54\",\"5/8/2111 4:00\",\"5/9/2111 16:05\",\"5/9/2111 3:46\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 163733\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"5/7/2111 18:45\",\"5/8/2111 14:07\",\"5/8/2111 21:48\",\"5/8/2111 2:54\",\"5/8/2111 4:00\",\"5/9/2111 16:05\",\"5/9/2111 3:46\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAW0AAAAAAAHBxQAAAAAAAIGFAAAAAAADAd0AAAAAAADB3QAAAAAAAAGhAAAAAAACAYUA=\",\"dtype\":\"float64\",\"shape\":[7]}}}],\"references\":[]},\"root\":\"96005\"}", "52": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/10/2152 12:16\",\"6/10/2152 22:00\",\"6/10/2152 3:30\",\"6/10/2152 8:00\",\"6/11/2152 12:00\",\"6/11/2152 16:47\",\"6/11/2152 17:00\",\"6/11/2152 22:00\",\"6/11/2152 3:04\",\"6/12/2152 12:00\",\"6/12/2152 16:15\",\"6/12/2152 18:00\",\"6/12/2152 22:00\",\"6/12/2152 2:00\",\"6/12/2152 5:04\",\"6/12/2152 9:00\",\"6/13/2152 0:00\",\"6/4/2152 10:00\",\"6/4/2152 10:30\",\"6/4/2152 11:00\",\"6/4/2152 12:00\",\"6/4/2152 13:00\",\"6/4/2152 14:00\",\"6/4/2152 15:22\",\"6/4/2152 15:33\",\"6/4/2152 16:00\",\"6/4/2152 17:00\",\"6/4/2152 18:00\",\"6/4/2152 18:55\",\"6/4/2152 19:00\",\"6/4/2152 21:00\",\"6/4/2152 22:00\",\"6/4/2152 23:19\",\"6/4/2152 23:30\",\"6/4/2152 3:35\",\"6/4/2152 5:00\",\"6/4/2152 6:00\",\"6/4/2152 6:25\",\"6/4/2152 7:06\",\"6/4/2152 8:00\",\"6/4/2152 8:11\",\"6/4/2152 9:00\",\"6/5/2152 10:00\",\"6/5/2152 11:00\",\"6/5/2152 12:00\",\"6/5/2152 13:00\",\"6/5/2152 14:19\",\"6/5/2152 15:00\",\"6/5/2152 16:00\",\"6/5/2152 18:00\",\"6/5/2152 19:00\",\"6/5/2152 19:56\",\"6/5/2152 20:00\",\"6/5/2152 21:00\",\"6/5/2152 23:00\",\"6/5/2152 2:00\",\"6/5/2152 3:10\",\"6/5/2152 3:28\",\"6/5/2152 5:00\",\"6/5/2152 7:00\",\"6/5/2152 8:00\",\"6/5/2152 8:12\",\"6/5/2152 9:00\",\"6/6/2152 10:00\",\"6/6/2152 11:00\",\"6/6/2152 11:44\",\"6/6/2152 12:00\",\"6/6/2152 13:00\",\"6/6/2152 14:00\",\"6/6/2152 15:00\",\"6/6/2152 16:00\",\"6/6/2152 17:00\",\"6/6/2152 18:00\",\"6/6/2152 1:00\",\"6/6/2152 1:06\",\"6/6/2152 1:30\",\"6/6/2152 20:00\",\"6/6/2152 20:23\",\"6/6/2152 20:49\",\"6/6/2152 22:00\",\"6/6/2152 23:00\",\"6/6/2152 2:00\",\"6/6/2152 4:00\",\"6/6/2152 4:28\",\"6/6/2152 5:00\",\"6/6/2152 8:00\",\"6/6/2152 9:00\",\"6/7/2152 0:00\",\"6/7/2152 10:00\",\"6/7/2152 12:00\",\"6/7/2152 14:00\",\"6/7/2152 15:00\",\"6/7/2152 16:00\",\"6/7/2152 17:00\",\"6/7/2152 17:01\",\"6/7/2152 18:00\",\"6/7/2152 1:00\",\"6/7/2152 20:00\",\"6/7/2152 21:00\",\"6/7/2152 22:00\",\"6/7/2152 23:00\",\"6/7/2152 2:00\",\"6/7/2152 3:00\",\"6/7/2152 4:00\",\"6/7/2152 5:00\",\"6/7/2152 5:18\",\"6/7/2152 6:00\",\"6/7/2152 7:00\",\"6/7/2152 8:00\",\"6/7/2152 9:00\",\"6/8/2152 0:00\",\"6/8/2152 10:00\",\"6/8/2152 12:00\",\"6/8/2152 13:00\",\"6/8/2152 14:00\",\"6/8/2152 16:00\",\"6/8/2152 18:00\",\"6/8/2152 1:08\",\"6/8/2152 20:00\",\"6/8/2152 21:30\",\"6/8/2152 22:00\",\"6/8/2152 23:15\",\"6/8/2152 2:00\",\"6/8/2152 3:00\",\"6/8/2152 3:58\",\"6/8/2152 4:00\",\"6/8/2152 5:00\",\"6/8/2152 6:00\",\"6/8/2152 7:00\",\"6/8/2152 8:00\",\"6/9/2152 12:00\",\"6/9/2152 18:00\",\"6/9/2152 1:00\",\"6/9/2152 21:00\",\"6/9/2152 3:00\",\"6/9/2152 5:24\",\"6/9/2152 5:30\",\"6/9/2152 8:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 147237\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/10/2152 12:16\",\"6/10/2152 22:00\",\"6/10/2152 3:30\",\"6/10/2152 8:00\",\"6/11/2152 12:00\",\"6/11/2152 16:47\",\"6/11/2152 17:00\",\"6/11/2152 22:00\",\"6/11/2152 3:04\",\"6/12/2152 12:00\",\"6/12/2152 16:15\",\"6/12/2152 18:00\",\"6/12/2152 22:00\",\"6/12/2152 2:00\",\"6/12/2152 5:04\",\"6/12/2152 9:00\",\"6/13/2152 0:00\",\"6/4/2152 10:00\",\"6/4/2152 10:30\",\"6/4/2152 11:00\",\"6/4/2152 12:00\",\"6/4/2152 13:00\",\"6/4/2152 14:00\",\"6/4/2152 15:22\",\"6/4/2152 15:33\",\"6/4/2152 16:00\",\"6/4/2152 17:00\",\"6/4/2152 18:00\",\"6/4/2152 18:55\",\"6/4/2152 19:00\",\"6/4/2152 21:00\",\"6/4/2152 22:00\",\"6/4/2152 23:19\",\"6/4/2152 23:30\",\"6/4/2152 3:35\",\"6/4/2152 5:00\",\"6/4/2152 6:00\",\"6/4/2152 6:25\",\"6/4/2152 6:25\",\"6/4/2152 7:06\",\"6/4/2152 8:00\",\"6/4/2152 8:11\",\"6/4/2152 9:00\",\"6/5/2152 10:00\",\"6/5/2152 11:00\",\"6/5/2152 12:00\",\"6/5/2152 13:00\",\"6/5/2152 14:19\",\"6/5/2152 14:19\",\"6/5/2152 15:00\",\"6/5/2152 16:00\",\"6/5/2152 18:00\",\"6/5/2152 19:00\",\"6/5/2152 19:56\",\"6/5/2152 20:00\",\"6/5/2152 21:00\",\"6/5/2152 23:00\",\"6/5/2152 2:00\",\"6/5/2152 3:10\",\"6/5/2152 3:28\",\"6/5/2152 5:00\",\"6/5/2152 7:00\",\"6/5/2152 8:00\",\"6/5/2152 8:12\",\"6/5/2152 9:00\",\"6/6/2152 10:00\",\"6/6/2152 11:00\",\"6/6/2152 11:44\",\"6/6/2152 12:00\",\"6/6/2152 13:00\",\"6/6/2152 14:00\",\"6/6/2152 15:00\",\"6/6/2152 16:00\",\"6/6/2152 17:00\",\"6/6/2152 18:00\",\"6/6/2152 1:00\",\"6/6/2152 1:06\",\"6/6/2152 1:30\",\"6/6/2152 20:00\",\"6/6/2152 20:23\",\"6/6/2152 20:49\",\"6/6/2152 22:00\",\"6/6/2152 23:00\",\"6/6/2152 2:00\",\"6/6/2152 4:00\",\"6/6/2152 4:28\",\"6/6/2152 5:00\",\"6/6/2152 8:00\",\"6/6/2152 9:00\",\"6/7/2152 0:00\",\"6/7/2152 10:00\",\"6/7/2152 12:00\",\"6/7/2152 14:00\",\"6/7/2152 15:00\",\"6/7/2152 16:00\",\"6/7/2152 17:00\",\"6/7/2152 17:01\",\"6/7/2152 18:00\",\"6/7/2152 1:00\",\"6/7/2152 20:00\",\"6/7/2152 21:00\",\"6/7/2152 22:00\",\"6/7/2152 23:00\",\"6/7/2152 2:00\",\"6/7/2152 3:00\",\"6/7/2152 4:00\",\"6/7/2152 5:00\",\"6/7/2152 5:18\",\"6/7/2152 6:00\",\"6/7/2152 7:00\",\"6/7/2152 8:00\",\"6/7/2152 9:00\",\"6/8/2152 0:00\",\"6/8/2152 10:00\",\"6/8/2152 12:00\",\"6/8/2152 13:00\",\"6/8/2152 14:00\",\"6/8/2152 16:00\",\"6/8/2152 18:00\",\"6/8/2152 1:08\",\"6/8/2152 20:00\",\"6/8/2152 21:30\",\"6/8/2152 22:00\",\"6/8/2152 23:15\",\"6/8/2152 2:00\",\"6/8/2152 3:00\",\"6/8/2152 3:58\",\"6/8/2152 4:00\",\"6/8/2152 5:00\",\"6/8/2152 6:00\",\"6/8/2152 7:00\",\"6/8/2152 8:00\",\"6/9/2152 12:00\",\"6/9/2152 18:00\",\"6/9/2152 1:00\",\"6/9/2152 21:00\",\"6/9/2152 3:00\",\"6/9/2152 5:24\",\"6/9/2152 5:30\",\"6/9/2152 8:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAbUAAAAAAAABpQAAAAAAAgGdAAAAAAACga0AAAAAAAIBvQAAAAAAAwHBAAAAAAABQckAAAAAAAFBwQAAAAAAAIGRAAAAAAADAbUAAAAAAACBhQAAAAAAAIGRAAAAAAACgYUAAAAAAAMBtQAAAAAAAAGtAAAAAAABAdkAAAAAAAGBlQAAAAAAA4GFAAAAAAAAAV0AAAAAAAABaQAAAAAAAQGBAAAAAAACAZEAAAAAAAIBlQAAAAAAAQGNAAAAAAADAYEAAAAAAAEBjQAAAAAAAAGNAAAAAAAAAXUAAAAAAAMBZQAAAAAAAQFtAAAAAAADAWkAAAAAAAEBVQAAAAAAAwFxAAAAAAACgYEAAAAAAACBqQAAAAAAAgGFAAAAAAADAUEAAAAAAAABkQAAAAAAAwFBAAAAAAAAAcEAAAAAAACBrQAAAAAAAQGlAAAAAAAAgaEAAAAAAAMBcQAAAAAAAwGNAAAAAAADgYEAAAAAAAABhQAAAAAAAQFlAAAAAAAAAYEAAAAAAAABYQAAAAAAAQFhAAAAAAABgYUAAAAAAAEBnQAAAAAAAIGlAAAAAAAAgaUAAAAAAAKBvQAAAAAAAQHFAAAAAAADAY0AAAAAAAGBkQAAAAAAA4GdAAAAAAADgZEAAAAAAAABiQAAAAAAAQFlAAAAAAABAX0AAAAAAAABdQAAAAAAAEHhAAAAAAADgdUAAAAAAADBwQAAAAAAAEHVAAAAAAAAAaEAAAAAAAEBbQAAAAAAAAFdAAAAAAADAVkAAAAAAAABWQAAAAAAAAFVAAAAAAACgcUAAAAAAABBwQAAAAAAA0HBAAAAAAABAW0AAAAAAAIBaQAAAAAAAwFxAAAAAAACAXUAAAAAAAABeQAAAAAAA0HBAAAAAAABQcEAAAAAAAOBxQAAAAAAAYHVAAAAAAACQd0AAAAAAAGB3QAAAAAAAQGRAAAAAAACAYUAAAAAAAOBhQAAAAAAAAGVAAAAAAADAYkAAAAAAAABgQAAAAAAAwFxAAAAAAAAAXUAAAAAAAIBaQAAAAAAAQGFAAAAAAADAVEAAAAAAAEBVQAAAAAAAgFlAAAAAAAAAX0AAAAAAAIBbQAAAAAAAgFlAAAAAAABAW0AAAAAAAEBZQAAAAAAAwF1AAAAAAAAAYEAAAAAAAGBgQAAAAAAAgGBAAAAAAABAYUAAAAAAAKBgQAAAAAAAIGNAAAAAAAAAXkAAAAAAAEBdQAAAAAAAwF9AAAAAAABgYkAAAAAAAIBjQAAAAAAAAGJAAAAAAAAgYUAAAAAAACBhQAAAAAAAwFhAAAAAAAAAWUAAAAAAAABgQAAAAAAAgF9AAAAAAABgYEAAAAAAAKBgQAAAAAAAgFxAAAAAAACAWkAAAAAAAMBUQAAAAAAAgGFAAAAAAABAbEAAAAAAAKBvQAAAAAAAwFtAAAAAAABgbkAAAAAAAABaQAAAAAAAAGBAAAAAAACgYUAAAAAAAEBlQA==\",\"dtype\":\"float64\",\"shape\":[140]}}}],\"references\":[]},\"root\":\"96005\"}", "53": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/12/2167 1:41\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 182008\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/12/2167 1:41\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAX0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "54": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/17/2159 4:22\",\"6/18/2159 14:06\",\"6/18/2159 3:51\",\"6/19/2159 3:13\",\"6/20/2159 3:59\",\"6/21/2159 4:00\",\"6/22/2159 21:40\",\"6/22/2159 5:14\",\"6/23/2159 5:00\",\"6/24/2159 3:53\",\"6/25/2159 3:44\",\"6/26/2159 3:53\",\"6/27/2159 14:19\",\"6/27/2159 4:22\",\"6/28/2159 3:48\",\"6/29/2159 4:01\",\"6/30/2159 14:00\",\"6/30/2159 4:03\",\"7/1/2159 14:45\",\"7/1/2159 20:15\",\"7/1/2159 2:56\",\"7/10/2159 0:08\",\"7/10/2159 13:11\",\"7/10/2159 18:58\",\"7/10/2159 5:50\",\"7/11/2159 0:00\",\"7/11/2159 12:38\",\"7/11/2159 18:10\",\"7/11/2159 23:52\",\"7/11/2159 23:57\",\"7/11/2159 5:59\",\"7/12/2159 11:41\",\"7/12/2159 18:06\",\"7/12/2159 5:51\",\"7/13/2159 10:16\",\"7/13/2159 15:19\",\"7/13/2159 22:01\",\"7/13/2159 3:47\",\"7/14/2159 12:13\",\"7/14/2159 15:00\",\"7/14/2159 18:15\",\"7/14/2159 20:12\",\"7/14/2159 3:42\",\"7/15/2159 14:46\",\"7/15/2159 21:16\",\"7/15/2159 2:43\",\"7/15/2159 8:48\",\"7/16/2159 15:09\",\"7/16/2159 21:09\",\"7/16/2159 3:08\",\"7/16/2159 9:11\",\"7/17/2159 14:29\",\"7/17/2159 21:47\",\"7/17/2159 22:01\",\"7/17/2159 3:13\",\"7/17/2159 8:36\",\"7/18/2159 14:52\",\"7/18/2159 22:34\",\"7/18/2159 4:00\",\"7/18/2159 4:09\",\"7/18/2159 8:58\",\"7/19/2159 15:05\",\"7/19/2159 19:42\",\"7/19/2159 4:01\",\"7/19/2159 4:11\",\"7/19/2159 4:56\",\"7/19/2159 8:45\",\"7/2/2159 12:46\",\"7/2/2159 17:39\",\"7/2/2159 22:24\",\"7/2/2159 3:06\",\"7/20/2159 14:55\",\"7/20/2159 1:34\",\"7/20/2159 20:10\",\"7/20/2159 8:09\",\"7/21/2159 13:37\",\"7/21/2159 1:50\",\"7/21/2159 20:08\",\"7/21/2159 7:23\",\"7/22/2159 14:36\",\"7/22/2159 20:19\",\"7/22/2159 2:03\",\"7/22/2159 7:34\",\"7/23/2159 13:28\",\"7/23/2159 20:06\",\"7/23/2159 2:12\",\"7/23/2159 8:45\",\"7/24/2159 2:56\",\"7/24/2159 7:37\",\"7/25/2159 19:59\",\"7/25/2159 4:36\",\"7/26/2159 12:43\",\"7/26/2159 17:48\",\"7/26/2159 6:02\",\"7/27/2159 0:47\",\"7/27/2159 12:03\",\"7/27/2159 18:04\",\"7/27/2159 5:57\",\"7/28/2159 0:38\",\"7/28/2159 11:49\",\"7/28/2159 18:42\",\"7/28/2159 5:55\",\"7/29/2159 11:48\",\"7/29/2159 1:13\",\"7/29/2159 6:00\",\"7/3/2159 14:03\",\"7/3/2159 2:26\",\"7/3/2159 7:22\",\"7/30/2159 4:38\",\"7/31/2159 2:57\",\"7/4/2159 13:10\",\"7/4/2159 17:12\",\"7/4/2159 5:14\",\"7/5/2159 0:50\",\"7/5/2159 11:44\",\"7/5/2159 11:50\",\"7/5/2159 18:17\",\"7/5/2159 4:13\",\"7/5/2159 5:58\",\"7/6/2159 11:36\",\"7/6/2159 18:05\",\"7/6/2159 1:55\",\"7/6/2159 6:06\",\"7/7/2159 0:20\",\"7/7/2159 12:12\",\"7/7/2159 18:08\",\"7/7/2159 23:29\",\"7/7/2159 5:51\",\"7/8/2159 12:04\",\"7/8/2159 17:53\",\"7/8/2159 23:52\",\"7/8/2159 5:24\",\"7/9/2159 10:51\",\"7/9/2159 17:32\",\"7/9/2159 6:00\",\"8/1/2159 14:58\",\"8/1/2159 5:29\",\"8/2/2159 3:41\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 159952\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/17/2159 4:22\",\"6/18/2159 14:06\",\"6/18/2159 3:51\",\"6/19/2159 3:13\",\"6/20/2159 3:59\",\"6/21/2159 4:00\",\"6/22/2159 21:40\",\"6/22/2159 5:14\",\"6/23/2159 5:00\",\"6/24/2159 3:53\",\"6/25/2159 3:44\",\"6/26/2159 3:53\",\"6/27/2159 14:19\",\"6/27/2159 4:22\",\"6/28/2159 3:48\",\"6/29/2159 4:01\",\"6/30/2159 14:00\",\"6/30/2159 4:03\",\"7/1/2159 14:45\",\"7/1/2159 20:15\",\"7/1/2159 2:56\",\"7/10/2159 0:08\",\"7/10/2159 13:11\",\"7/10/2159 18:58\",\"7/10/2159 5:50\",\"7/11/2159 0:00\",\"7/11/2159 12:38\",\"7/11/2159 18:10\",\"7/11/2159 23:52\",\"7/11/2159 23:57\",\"7/11/2159 5:59\",\"7/12/2159 11:41\",\"7/12/2159 18:06\",\"7/12/2159 5:51\",\"7/13/2159 10:16\",\"7/13/2159 15:19\",\"7/13/2159 22:01\",\"7/13/2159 3:47\",\"7/14/2159 12:13\",\"7/14/2159 15:00\",\"7/14/2159 18:15\",\"7/14/2159 20:12\",\"7/14/2159 3:42\",\"7/15/2159 14:46\",\"7/15/2159 21:16\",\"7/15/2159 2:43\",\"7/15/2159 8:48\",\"7/16/2159 15:09\",\"7/16/2159 21:09\",\"7/16/2159 3:08\",\"7/16/2159 9:11\",\"7/17/2159 14:29\",\"7/17/2159 21:47\",\"7/17/2159 22:01\",\"7/17/2159 3:13\",\"7/17/2159 8:36\",\"7/18/2159 14:52\",\"7/18/2159 22:34\",\"7/18/2159 4:00\",\"7/18/2159 4:09\",\"7/18/2159 8:58\",\"7/19/2159 15:05\",\"7/19/2159 19:42\",\"7/19/2159 4:01\",\"7/19/2159 4:11\",\"7/19/2159 4:56\",\"7/19/2159 8:45\",\"7/2/2159 12:46\",\"7/2/2159 17:39\",\"7/2/2159 22:24\",\"7/2/2159 3:06\",\"7/20/2159 14:55\",\"7/20/2159 1:34\",\"7/20/2159 20:10\",\"7/20/2159 8:09\",\"7/21/2159 13:37\",\"7/21/2159 1:50\",\"7/21/2159 20:08\",\"7/21/2159 7:23\",\"7/22/2159 14:36\",\"7/22/2159 20:19\",\"7/22/2159 2:03\",\"7/22/2159 7:34\",\"7/23/2159 13:28\",\"7/23/2159 20:06\",\"7/23/2159 2:12\",\"7/23/2159 8:45\",\"7/24/2159 2:56\",\"7/24/2159 7:37\",\"7/25/2159 19:59\",\"7/25/2159 4:36\",\"7/26/2159 12:43\",\"7/26/2159 17:48\",\"7/26/2159 6:02\",\"7/27/2159 0:47\",\"7/27/2159 12:03\",\"7/27/2159 18:04\",\"7/27/2159 5:57\",\"7/28/2159 0:38\",\"7/28/2159 11:49\",\"7/28/2159 18:42\",\"7/28/2159 5:55\",\"7/29/2159 11:48\",\"7/29/2159 1:13\",\"7/29/2159 6:00\",\"7/3/2159 14:03\",\"7/3/2159 2:26\",\"7/3/2159 7:22\",\"7/30/2159 4:38\",\"7/31/2159 2:57\",\"7/4/2159 13:10\",\"7/4/2159 17:12\",\"7/4/2159 5:14\",\"7/5/2159 0:50\",\"7/5/2159 11:44\",\"7/5/2159 11:50\",\"7/5/2159 18:17\",\"7/5/2159 4:13\",\"7/5/2159 5:58\",\"7/6/2159 11:36\",\"7/6/2159 18:05\",\"7/6/2159 1:55\",\"7/6/2159 6:06\",\"7/7/2159 0:20\",\"7/7/2159 12:12\",\"7/7/2159 18:08\",\"7/7/2159 23:29\",\"7/7/2159 5:51\",\"7/8/2159 12:04\",\"7/8/2159 17:53\",\"7/8/2159 23:52\",\"7/8/2159 5:24\",\"7/9/2159 10:51\",\"7/9/2159 17:32\",\"7/9/2159 6:00\",\"8/1/2159 14:58\",\"8/1/2159 5:29\",\"8/2/2159 3:41\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAcUAAAAAAADB0QAAAAAAA4HFAAAAAAAAAWUAAAAAAAMBaQAAAAAAAQGRAAAAAAACAY0AAAAAAAMBlQAAAAAAAQGVAAAAAAAAQdEAAAAAAAEBgQAAAAAAA4GRAAAAAAABgbkAAAAAAADB0QAAAAAAAIHBAAAAAAADAZEAAAAAAAMBlQAAAAAAAIGVAAAAAAACAYkAAAAAAADByQAAAAAAAAGVAAAAAAABAXEAAAAAAAOBzQAAAAAAAAGNAAAAAAADgbkAAAAAAAABZQAAAAAAAAGNAAAAAAADgbUAAAAAAAMBjQAAAAAAAAGNAAAAAAABgY0AAAAAAAGBkQAAAAAAAAHBAAAAAAABAaEAAAAAAACBoQAAAAAAAIGJAAAAAAACgaUAAAAAAACBqQAAAAAAAQGdAAAAAAABgZ0AAAAAAAOBlQAAAAAAAQGRAAAAAAAAAXkAAAAAAAGBkQAAAAAAAYGBAAAAAAADAY0AAAAAAAABiQAAAAAAAQF5AAAAAAADAXkAAAAAAAIBaQAAAAAAAwF5AAAAAAAAAXEAAAAAAAIBcQAAAAAAAQFpAAAAAAADAXkAAAAAAAABiQAAAAAAAAF5AAAAAAACAXUAAAAAAAEBrQAAAAAAAgGhAAAAAAAAAXEAAAAAAAKBkQAAAAAAAQFJAAAAAAABgckAAAAAAAABxQAAAAAAAQHFAAAAAAACAU0AAAAAAAABhQAAAAAAAIGhAAAAAAAAgakAAAAAAACBqQAAAAAAAAHFAAAAAAAAgY0AAAAAAAGBvQAAAAAAAQFJAAAAAAAAgc0AAAAAAAKB1QAAAAAAAAFdAAAAAAACAc0AAAAAAAGBhQAAAAAAAIGdAAAAAAAAgZEAAAAAAAABWQAAAAAAAYGBAAAAAAAAAWUAAAAAAAIBhQAAAAAAAQF1AAAAAAADgaUAAAAAAAABXQAAAAAAAgGFAAAAAAACgYkAAAAAAAABiQAAAAAAAgGpAAAAAAABAXEAAAAAAAMBgQAAAAAAAwGBAAAAAAACgYUAAAAAAAEBqQAAAAAAAAGJAAAAAAAAgYkAAAAAAACBlQAAAAAAAgF5AAAAAAAAwcUAAAAAAAMBvQAAAAAAAkHFAAAAAAACAZUAAAAAAAEBgQAAAAAAAIGJAAAAAAABgbEAAAAAAAOBjQAAAAAAAoGNAAAAAAADAZUAAAAAAAGBqQAAAAAAAQF9AAAAAAADAW0AAAAAAAIBbQAAAAAAAQGJAAAAAAAAAXUAAAAAAAEBbQAAAAAAAAGJAAAAAAABAXUAAAAAAAMBjQAAAAAAAwGVAAAAAAABgZkAAAAAAAKBmQAAAAAAAQFlAAAAAAACAXUAAAAAAACBkQAAAAAAAIGFAAAAAAAAAXkAAAAAAAIBaQAAAAAAAgFhAAAAAAAAAZEAAAAAAAGBhQAAAAAAAQFdAAAAAAABgYEAAAAAAAMBUQAAAAAAAwGJA\",\"dtype\":\"float64\",\"shape\":[138]}}}],\"references\":[]},\"root\":\"96005\"}", "55": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/2/2135 11:49\",\"6/2/2135 13:49\",\"6/2/2135 13:59\",\"6/2/2135 5:10\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 175505\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/2/2135 11:49\",\"6/2/2135 13:49\",\"6/2/2135 13:59\",\"6/2/2135 5:10\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADgZEAAAAAAAEBjQAAAAAAA4GBAAAAAAACARUA=\",\"dtype\":\"float64\",\"shape\":[4]}}}],\"references\":[]},\"root\":\"96005\"}", "56": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/25/2135 4:54\",\"6/26/2135 3:55\",\"6/28/2135 3:52\",\"6/29/2135 4:17\",\"6/30/2135 1:45\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 101912\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/25/2135 4:54\",\"6/26/2135 3:55\",\"6/28/2135 3:52\",\"6/29/2135 4:17\",\"6/30/2135 1:45\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAVkAAAAAAAABTQAAAAAAAwGJAAAAAAAAAVUAAAAAAAEBSQA==\",\"dtype\":\"float64\",\"shape\":[5]}}}],\"references\":[]},\"root\":\"96005\"}", "57": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/27/2174 8:05\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 139583\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/27/2174 8:05\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADQcEA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "58": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/30/2175 23:46\",\"7/1/2175 5:28\",\"7/5/2175 22:21\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 175251\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/30/2175 23:46\",\"7/1/2175 5:28\",\"7/5/2175 22:21\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAZUAAAAAAAIBjQAAAAAAA8HRA\",\"dtype\":\"float64\",\"shape\":[3]}}}],\"references\":[]},\"root\":\"96005\"}", "59": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"6/30/2199 15:30\",\"7/1/2199 3:50\",\"7/1/2199 6:44\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 137638\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"6/30/2199 15:30\",\"7/1/2199 3:50\",\"7/1/2199 6:44\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACgYEAAAAAAACBgQAAAAAAAAGFA\",\"dtype\":\"float64\",\"shape\":[3]}}}],\"references\":[]},\"root\":\"96005\"}", "60": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/13/2179 19:36\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 129988\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/13/2179 19:36\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAf0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "61": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/14/2120 12:36\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 102668\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/14/2120 12:36\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgZUA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "62": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/14/2141 5:00\",\"7/16/2141 20:53\",\"7/16/2141 21:00\",\"7/17/2141 0:00\",\"7/17/2141 12:00\",\"7/17/2141 17:00\",\"7/17/2141 17:09\",\"7/17/2141 4:55\",\"7/17/2141 6:00\",\"7/17/2141 9:31\",\"7/18/2141 0:00\",\"7/18/2141 12:00\",\"7/18/2141 12:05\",\"7/18/2141 18:00\",\"7/18/2141 4:50\",\"7/18/2141 6:00\",\"7/19/2141 0:00\",\"7/19/2141 12:00\",\"7/19/2141 4:06\",\"7/19/2141 6:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 195382\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/14/2141 5:00\",\"7/16/2141 20:53\",\"7/16/2141 21:00\",\"7/17/2141 0:00\",\"7/17/2141 12:00\",\"7/17/2141 17:00\",\"7/17/2141 17:09\",\"7/17/2141 4:55\",\"7/17/2141 6:00\",\"7/17/2141 9:31\",\"7/18/2141 0:00\",\"7/18/2141 12:00\",\"7/18/2141 12:05\",\"7/18/2141 18:00\",\"7/18/2141 4:50\",\"7/18/2141 6:00\",\"7/19/2141 0:00\",\"7/19/2141 12:00\",\"7/19/2141 4:06\",\"7/19/2141 6:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABgYUAAAAAAAABkQAAAAAAAwGVAAAAAAAAAU0AAAAAAACBgQAAAAAAA4HhAAAAAAADAdkAAAAAAAIBcQAAAAAAAwFtAAAAAAADgYEAAAAAAAMB4QAAAAAAA4HpAAAAAAABAeUAAAAAAAEB2QAAAAAAAUINAAAAAAACAaEAAAAAAAMBxQAAAAAAAQGhAAAAAAADgZkAAAAAAAABpQA==\",\"dtype\":\"float64\",\"shape\":[20]}}}],\"references\":[]},\"root\":\"96005\"}", "63": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/17/2103 18:43\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 157537\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/17/2103 18:43\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABwfEA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "64": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/18/2136 18:51\",\"7/19/2136 12:45\",\"7/19/2136 19:57\",\"7/19/2136 4:45\",\"7/20/2136 5:47\",\"7/21/2136 18:17\",\"7/21/2136 4:30\",\"7/22/2136 3:58\",\"7/23/2136 18:29\",\"7/23/2136 3:48\",\"7/26/2136 23:06\",\"7/27/2136 4:59\",\"7/28/2136 6:07\",\"7/29/2136 5:44\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 120237\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/18/2136 18:51\",\"7/19/2136 12:45\",\"7/19/2136 19:57\",\"7/19/2136 4:45\",\"7/20/2136 5:47\",\"7/21/2136 18:17\",\"7/21/2136 4:30\",\"7/22/2136 3:58\",\"7/23/2136 18:29\",\"7/23/2136 3:48\",\"7/26/2136 23:06\",\"7/27/2136 4:59\",\"7/28/2136 6:07\",\"7/29/2136 5:44\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACgZkAAAAAAAABkQAAAAAAAwGNAAAAAAACgYEAAAAAAAABVQAAAAAAAYGNAAAAAAADAUEAAAAAAAIBUQAAAAAAAgGJAAAAAAAAAWEAAAAAAAIBYQAAAAAAAAFlAAAAAAAAAWkAAAAAAAABWQA==\",\"dtype\":\"float64\",\"shape\":[14]}}}],\"references\":[]},\"root\":\"96005\"}", "65": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/4/2153 18:58\",\"7/4/2153 20:17\",\"7/4/2153 23:00\",\"7/5/2153 23:00\",\"7/5/2153 2:16\",\"7/5/2153 5:00\",\"7/6/2153 11:00\",\"7/6/2153 17:00\",\"7/6/2153 23:00\",\"7/6/2153 2:07\",\"7/6/2153 5:00\",\"7/7/2153 5:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 159476\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/4/2153 18:58\",\"7/4/2153 18:58\",\"7/4/2153 20:17\",\"7/4/2153 20:17\",\"7/4/2153 23:00\",\"7/5/2153 23:00\",\"7/5/2153 2:16\",\"7/5/2153 2:16\",\"7/5/2153 5:00\",\"7/6/2153 11:00\",\"7/6/2153 17:00\",\"7/6/2153 23:00\",\"7/6/2153 2:07\",\"7/6/2153 2:07\",\"7/6/2153 5:00\",\"7/7/2153 5:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAXEAAAAAAAMBcQAAAAAAAAF1AAAAAAAAAXUAAAAAAAIBhQAAAAAAAQGJAAAAAAABgYkAAAAAAAGBiQAAAAAAA4GRAAAAAAABAXEAAAAAAAEBbQAAAAAAAQFlAAAAAAADAX0AAAAAAAMBfQAAAAAAAwGJAAAAAAADAW0A=\",\"dtype\":\"float64\",\"shape\":[16]}}}],\"references\":[]},\"root\":\"96005\"}", "66": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/4/2156 4:54\",\"7/5/2156 5:38\",\"7/6/2156 4:38\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 175168\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/4/2156 4:54\",\"7/5/2156 5:38\",\"7/6/2156 4:38\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAgbEAAAAAAACBlQAAAAAAAAGFA\",\"dtype\":\"float64\",\"shape\":[3]}}}],\"references\":[]},\"root\":\"96005\"}", "67": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/4/2193 6:45\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 158238\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/4/2193 6:45\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAT0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "68": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"7/7/2199 21:57\",\"7/7/2199 23:00\",\"7/8/2199 5:07\",\"7/8/2199 8:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 187571\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"7/7/2199 21:57\",\"7/7/2199 23:00\",\"7/8/2199 5:07\",\"7/8/2199 8:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAcEAAAAAAAABuQAAAAAAAsHlAAAAAAAAweUA=\",\"dtype\":\"float64\",\"shape\":[4]}}}],\"references\":[]},\"root\":\"96005\"}", "69": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"8/10/2204 12:00\",\"8/10/2204 16:00\",\"8/10/2204 18:00\",\"8/10/2204 1:00\",\"8/10/2204 1:32\",\"8/10/2204 4:00\",\"8/10/2204 8:00\",\"8/5/2204 15:33\",\"8/5/2204 16:00\",\"8/5/2204 22:00\",\"8/6/2204 10:00\",\"8/6/2204 11:36\",\"8/6/2204 16:00\",\"8/6/2204 17:18\",\"8/6/2204 22:00\",\"8/6/2204 3:14\",\"8/6/2204 4:00\",\"8/7/2204 10:00\",\"8/7/2204 16:00\",\"8/7/2204 21:45\",\"8/7/2204 22:00\",\"8/7/2204 3:40\",\"8/7/2204 4:00\",\"8/8/2204 10:00\",\"8/8/2204 15:00\",\"8/8/2204 16:37\",\"8/8/2204 17:00\",\"8/8/2204 22:00\",\"8/8/2204 22:30\",\"8/8/2204 2:00\",\"8/8/2204 3:25\",\"8/8/2204 4:00\",\"8/8/2204 5:00\",\"8/8/2204 6:00\",\"8/9/2204 12:00\",\"8/9/2204 16:00\",\"8/9/2204 18:00\",\"8/9/2204 22:00\",\"8/9/2204 23:00\",\"8/9/2204 3:07\",\"8/9/2204 4:00\",\"8/9/2204 5:00\",\"8/9/2204 6:00\",\"8/9/2204 8:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 186086\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"8/10/2204 12:00\",\"8/10/2204 16:00\",\"8/10/2204 18:00\",\"8/10/2204 1:00\",\"8/10/2204 1:32\",\"8/10/2204 4:00\",\"8/10/2204 8:00\",\"8/5/2204 15:33\",\"8/5/2204 16:00\",\"8/5/2204 22:00\",\"8/6/2204 10:00\",\"8/6/2204 11:36\",\"8/6/2204 16:00\",\"8/6/2204 17:18\",\"8/6/2204 22:00\",\"8/6/2204 22:00\",\"8/6/2204 3:14\",\"8/6/2204 4:00\",\"8/7/2204 10:00\",\"8/7/2204 16:00\",\"8/7/2204 21:45\",\"8/7/2204 22:00\",\"8/7/2204 3:40\",\"8/7/2204 4:00\",\"8/8/2204 10:00\",\"8/8/2204 15:00\",\"8/8/2204 16:37\",\"8/8/2204 17:00\",\"8/8/2204 22:00\",\"8/8/2204 22:30\",\"8/8/2204 2:00\",\"8/8/2204 3:25\",\"8/8/2204 4:00\",\"8/8/2204 5:00\",\"8/8/2204 6:00\",\"8/9/2204 12:00\",\"8/9/2204 16:00\",\"8/9/2204 18:00\",\"8/9/2204 22:00\",\"8/9/2204 23:00\",\"8/9/2204 3:07\",\"8/9/2204 4:00\",\"8/9/2204 5:00\",\"8/9/2204 6:00\",\"8/9/2204 8:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAcUAAAAAAAKBzQAAAAAAA4G9AAAAAAACAU0AAAAAAAABMQAAAAAAAQFBAAAAAAADAZkAAAAAAAMBhQAAAAAAAAGdAAAAAAADwcEAAAAAAAEBuQAAAAAAAAGtAAAAAAACgZ0AAAAAAAMBiQAAAAAAAgFtAAAAAAADAXkAAAAAAACBwQAAAAAAA4HNAAAAAAABAXkAAAAAAAEBZQAAAAAAAAFNAAAAAAADAVkAAAAAAAABgQAAAAAAAAGJAAAAAAACAUUAAAAAAAIBMQAAAAAAAgFJAAAAAAABAU0AAAAAAAIBNQAAAAAAAoGBAAAAAAADAVUAAAAAAAABQQAAAAAAAQFNAAAAAAABAUkAAAAAAAEBfQAAAAAAAAFJAAAAAAADAU0AAAAAAAABXQAAAAAAAAEtAAAAAAADAVEAAAAAAAMBQQAAAAAAAgFBAAAAAAACATkAAAAAAAABcQAAAAAAAwFZA\",\"dtype\":\"float64\",\"shape\":[45]}}}],\"references\":[]},\"root\":\"96005\"}", "70": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"8/11/2153 22:30\",\"8/12/2153 20:08\",\"8/12/2153 2:01\",\"8/12/2153 4:37\",\"8/13/2153 2:02\",\"8/13/2153 6:45\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 138159\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"8/11/2153 22:30\",\"8/12/2153 20:08\",\"8/12/2153 2:01\",\"8/12/2153 4:37\",\"8/13/2153 2:02\",\"8/13/2153 6:45\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACgZEAAAAAAAIBlQAAAAAAAYHJAAAAAAABgfkAAAAAAAMBdQAAAAAAAgGFA\",\"dtype\":\"float64\",\"shape\":[6]}}}],\"references\":[]},\"root\":\"96005\"}", "71": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"8/12/2121 11:09\",\"8/12/2121 8:48\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 103934\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"8/12/2121 11:09\",\"8/12/2121 8:48\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAZEAAAAAAAABkQA==\",\"dtype\":\"float64\",\"shape\":[2]}}}],\"references\":[]},\"root\":\"96005\"}", "72": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"8/16/2165 19:17\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 169319\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"8/16/2165 19:17\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACAZ0A=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "73": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"8/19/2204 15:10\",\"8/19/2204 21:10\",\"8/24/2204 14:27\",\"8/24/2204 20:52\",\"8/24/2204 9:28\",\"8/25/2204 2:11\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 142098\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"8/19/2204 15:10\",\"8/19/2204 21:10\",\"8/24/2204 14:27\",\"8/24/2204 20:52\",\"8/24/2204 9:28\",\"8/25/2204 2:11\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADAU0AAAAAAAABRQAAAAAAA4GVAAAAAAACgZEAAAAAAAMBiQAAAAAAA4GBA\",\"dtype\":\"float64\",\"shape\":[6]}}}],\"references\":[]},\"root\":\"96005\"}", "74": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"8/26/2193 13:37\",\"8/26/2193 13:45\",\"8/26/2193 18:44\",\"8/26/2193 22:00\",\"8/27/2193 0:25\",\"8/27/2193 13:25\",\"8/27/2193 18:00\",\"8/27/2193 23:03\",\"8/27/2193 3:21\",\"8/27/2193 6:00\",\"8/28/2193 10:08\",\"8/28/2193 4:01\",\"8/7/2193 23:00\",\"8/8/2193 5:01\",\"8/8/2193 6:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 134370\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"8/26/2193 13:37\",\"8/26/2193 13:45\",\"8/26/2193 18:44\",\"8/26/2193 22:00\",\"8/27/2193 0:25\",\"8/27/2193 13:25\",\"8/27/2193 18:00\",\"8/27/2193 23:03\",\"8/27/2193 3:21\",\"8/27/2193 6:00\",\"8/28/2193 10:08\",\"8/28/2193 4:01\",\"8/7/2193 23:00\",\"8/8/2193 5:01\",\"8/8/2193 6:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAYUAAAAAAAGBiQAAAAAAAQFtAAAAAAADAZkAAAAAAAMBnQAAAAAAAoGZAAAAAAAAgZ0AAAAAAAGBkQAAAAAAAIGZAAAAAAACgaEAAAAAAAIBaQAAAAAAAwFxAAAAAAAAAYUAAAAAAAEBYQAAAAAAAQFZA\",\"dtype\":\"float64\",\"shape\":[15]}}}],\"references\":[]},\"root\":\"96005\"}", "75": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"9/1/2130 9:53\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 113289\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"9/1/2130 9:53\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABAbUA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}", "76": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"9/1/2179 22:22\",\"9/2/2179 22:44\",\"9/3/2179 10:27\",\"9/3/2179 21:54\",\"9/3/2179 4:34\",\"9/4/2179 16:29\",\"9/5/2179 16:09\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 193531\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"9/1/2179 22:22\",\"9/2/2179 22:44\",\"9/3/2179 10:27\",\"9/3/2179 21:54\",\"9/3/2179 4:34\",\"9/4/2179 16:29\",\"9/5/2179 16:09\"],\"valuenum\":{\"__ndarray__\":\"AAAAAADgZUAAAAAAAIBoQAAAAAAAAGpAAAAAAABAZ0AAAAAAAOBnQAAAAAAAgGNAAAAAAABgZkA=\",\"dtype\":\"float64\",\"shape\":[7]}}}],\"references\":[]},\"root\":\"96005\"}", "77": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"9/10/2177 3:49\",\"9/12/2177 11:16\",\"9/12/2177 17:45\",\"9/8/2177 11:20\",\"9/9/2177 14:56\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 110730\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"9/10/2177 3:49\",\"9/12/2177 11:16\",\"9/12/2177 17:45\",\"9/8/2177 11:20\",\"9/9/2177 14:56\"],\"valuenum\":{\"__ndarray__\":\"AAAAAACgZ0AAAAAAAFBzQAAAAAAAUHFAAAAAAABAZUAAAAAAACBgQA==\",\"dtype\":\"float64\",\"shape\":[5]}}}],\"references\":[]},\"root\":\"96005\"}", "78": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"9/26/2155 1:12\",\"9/26/2155 2:33\",\"9/26/2155 2:54\",\"9/26/2155 3:47\",\"9/26/2155 4:25\",\"9/26/2155 5:10\",\"9/26/2155 5:41\",\"9/26/2155 6:46\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 168672\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"9/26/2155 1:12\",\"9/26/2155 2:33\",\"9/26/2155 2:54\",\"9/26/2155 3:47\",\"9/26/2155 4:25\",\"9/26/2155 5:10\",\"9/26/2155 5:41\",\"9/26/2155 6:46\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAcUAAAAAAABBzQAAAAAAAUHBAAAAAAABgbEAAAAAAAIBpQAAAAAAAYGRAAAAAAACAYUAAAAAAAABZQA==\",\"dtype\":\"float64\",\"shape\":[8]}}}],\"references\":[]},\"root\":\"96005\"}", "79": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"9/3/2129 16:00\",\"9/3/2129 22:00\",\"9/4/2129 10:00\",\"9/4/2129 16:00\",\"9/4/2129 22:00\",\"9/4/2129 4:00\",\"9/4/2129 4:24\",\"9/5/2129 10:00\",\"9/5/2129 15:00\",\"9/5/2129 17:00\",\"9/5/2129 1:52\",\"9/5/2129 22:00\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 194340\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"9/3/2129 16:00\",\"9/3/2129 22:00\",\"9/4/2129 10:00\",\"9/4/2129 16:00\",\"9/4/2129 22:00\",\"9/4/2129 4:00\",\"9/4/2129 4:24\",\"9/5/2129 10:00\",\"9/5/2129 15:00\",\"9/5/2129 17:00\",\"9/5/2129 1:52\",\"9/5/2129 22:00\"],\"valuenum\":{\"__ndarray__\":\"AAAAAAAAbEAAAAAAADBwQAAAAAAAYHRAAAAAAABgdEAAAAAAAOByQAAAAAAAQG5AAAAAAAAgbUAAAAAAAKB1QAAAAAAAkHNAAAAAAAAgcUAAAAAAAKBsQAAAAAAAgGxA\",\"dtype\":\"float64\",\"shape\":[12]}}}],\"references\":[]},\"root\":\"96005\"}", "80": "{\"content\":{\"events\":[{\"attr\":\"factors\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96001\",\"type\":\"FactorRange\"},\"new\":[\"9/30/2132 6:02\"]},{\"attr\":\"text\",\"kind\":\"ModelChanged\",\"model\":{\"id\":\"96004\",\"type\":\"Title\"},\"new\":\"hadm_id: 160948\"},{\"cols\":[\"valuenum\",\"charttime\"],\"column_source\":{\"id\":\"96036\",\"type\":\"ColumnDataSource\"},\"kind\":\"ColumnDataChanged\",\"new\":{\"charttime\":[\"9/30/2132 6:02\"],\"valuenum\":{\"__ndarray__\":\"AAAAAABwdUA=\",\"dtype\":\"float64\",\"shape\":[1]}}}],\"references\":[]},\"root\":\"96005\"}"};
+  var anim = new HoloViews.BokehScrubberWidget(frame_data, 81, "0948e6144e8944c48fb12ccb658364df", 200, false, "default", true, "", false, "96005");
+  HoloViews.index['96005'] = anim;
+}
+
+create_widget();
+
+
+// Ugly hack - see HoloViews #2574 for more information
+if (!(document.getElementById('96005')) && !(document.getElementById('_anim_imgNone'))) {
+  console.log("Creating DOM nodes dynamically for assumed nbconvert export. To generate clean HTML output set HV_DOC_HTML as an environment variable.")
+  var htmlObject = document.createElement('div');
+  htmlObject.innerHTML = `<div id='96005' style='display: table; margin: 0 auto;'>
+
+
+
+
+
+  <div class="bk-root" id="e872a298-062e-4c8d-9699-1c7ae922d143" data-root-id="96005"></div>
+</div>`;
+  var scriptTags = document.getElementsByTagName('script');
+  var parentTag = scriptTags[scriptTags.length-1].parentNode;
+  if (parentTag.attributes.length && (parentTag.attributes[0].name == 'data-shell-mode')) {
+    alert('Displaying PyViz objects in JupyterLab requires the jupyterlab_pyviz extension to be installed, install it with:\n\n\tjupyter labextension install @pyviz/jupyterlab_pyviz');
+  } else {
+    parentTag.append(htmlObject)
+  }
+}
+(function(root) {
+  function embed_document(root) {
+    
+  var docs_json = {"68102225-e85e-4d96-adc9-75e6bf60fcdc":{"roots":{"references":[{"attributes":{"below":[{"id":"96013","type":"CategoricalAxis"}],"left":[{"id":"96017","type":"LinearAxis"}],"min_border_bottom":10,"min_border_left":10,"min_border_right":10,"min_border_top":10,"plot_height":300,"renderers":[{"id":"96013","type":"CategoricalAxis"},{"id":"96016","type":"Grid"},{"id":"96017","type":"LinearAxis"},{"id":"96021","type":"Grid"},{"id":"96031","type":"BoxAnnotation"},{"id":"96042","type":"GlyphRenderer"}],"title":{"id":"96004","type":"Title"},"toolbar":{"id":"96027","type":"Toolbar"},"x_range":{"id":"96001","type":"FactorRange"},"x_scale":{"id":"96009","type":"CategoricalScale"},"y_range":{"id":"96002","type":"Range1d"},"y_scale":{"id":"96011","type":"LinearScale"}},"id":"96005","subtype":"Figure","type":"Plot"},{"attributes":{},"id":"96009","type":"CategoricalScale"},{"attributes":{"data_source":{"id":"96036","type":"ColumnDataSource"},"glyph":{"id":"96039","type":"Line"},"hover_glyph":null,"muted_glyph":{"id":"96041","type":"Line"},"nonselection_glyph":{"id":"96040","type":"Line"},"selection_glyph":null,"view":{"id":"96043","type":"CDSView"}},"id":"96042","type":"GlyphRenderer"},{"attributes":{"plot":null,"text":"hadm_id: 132401","text_color":{"value":"black"},"text_font_size":{"value":"12pt"}},"id":"96004","type":"Title"},{"attributes":{"line_alpha":0.1,"line_color":"red","line_width":2,"x":{"field":"charttime"},"y":{"field":"valuenum"}},"id":"96040","type":"Line"},{"attributes":{"axis_label":"valuenum","bounds":"auto","formatter":{"id":"96046","type":"BasicTickFormatter"},"major_label_orientation":"horizontal","plot":{"id":"96005","subtype":"Figure","type":"Plot"},"ticker":{"id":"96018","type":"BasicTicker"}},"id":"96017","type":"LinearAxis"},{"attributes":{"active_drag":"auto","active_inspect":"auto","active_multi":null,"active_scroll":"auto","active_tap":"auto","tools":[{"id":"96003","type":"HoverTool"},{"id":"96022","type":"SaveTool"},{"id":"96023","type":"PanTool"},{"id":"96024","type":"WheelZoomTool"},{"id":"96025","type":"BoxZoomTool"},{"id":"96026","type":"ResetTool"}]},"id":"96027","type":"Toolbar"},{"attributes":{"line_color":"red","line_width":2,"x":{"field":"charttime"},"y":{"field":"valuenum"}},"id":"96039","type":"Line"},{"attributes":{},"id":"96045","type":"CategoricalTickFormatter"},{"attributes":{},"id":"96059","type":"UnionRenderers"},{"attributes":{"callback":null,"data":{"charttime":["9/30/2132 6:02"],"valuenum":{"__ndarray__":"AAAAAABwdUA=","dtype":"float64","shape":[1]}},"selected":{"id":"96037","type":"Selection"},"selection_policy":{"id":"96059","type":"UnionRenderers"}},"id":"96036","type":"ColumnDataSource"},{"attributes":{},"id":"96014","type":"CategoricalTicker"},{"attributes":{"overlay":{"id":"96031","type":"BoxAnnotation"}},"id":"96025","type":"BoxZoomTool"},{"attributes":{"callback":null,"renderers":[{"id":"96042","type":"GlyphRenderer"}],"tooltips":[["charttime","@{charttime}"],["valuenum","@{valuenum}"]]},"id":"96003","type":"HoverTool"},{"attributes":{},"id":"96018","type":"BasicTicker"},{"attributes":{},"id":"96026","type":"ResetTool"},{"attributes":{"callback":null,"factors":["1/10/2162 19:51","1/10/2162 23:39","1/11/2162 10:22","1/11/2162 10:30","1/11/2162 11:43","1/11/2162 15:22","1/11/2162 21:06","1/11/2162 3:10","1/11/2162 6:10","1/12/2162 10:20","1/12/2162 17:18","1/12/2162 22:00","1/12/2162 3:00","1/12/2162 3:21","1/13/2162 10:02","1/13/2162 10:30","1/13/2162 14:00","1/13/2162 15:35","1/13/2162 16:00","1/13/2162 19:00","1/13/2162 20:00","1/13/2162 22:35","1/13/2162 3:13","1/14/2162 0:00","1/14/2162 12:00","1/14/2162 16:00","1/14/2162 18:00","1/14/2162 19:00","1/14/2162 20:00","1/14/2162 22:38","1/14/2162 2:00","1/14/2162 4:00","1/14/2162 5:00","1/14/2162 7:00","1/14/2162 7:30","1/14/2162 9:00","1/15/2162 10:03","1/15/2162 11:55","1/15/2162 16:27","1/15/2162 21:09","1/15/2162 2:00","1/15/2162 4:15","1/15/2162 6:00","1/16/2162 10:00","1/16/2162 3:12","1/16/2162 9:57","12/10/2161 10:00","12/10/2161 10:34","12/10/2161 16:00","12/10/2161 18:40","12/10/2161 2:09","12/11/2161 10:00","12/11/2161 14:26","12/11/2161 16:00","12/11/2161 1:18","12/11/2161 20:00","12/11/2161 23:26","12/12/2161 10:01","12/12/2161 16:03","12/12/2161 16:21","12/12/2161 22:09","12/12/2161 22:15","12/12/2161 2:56","12/12/2161 5:10","12/12/2161 9:33","12/13/2161 10:14","12/13/2161 16:33","12/13/2161 22:03","12/13/2161 22:46","12/13/2161 4:22","12/13/2161 4:28","12/14/2161 10:00","12/14/2161 14:54","12/14/2161 16:00","12/14/2161 22:10","12/14/2161 2:42","12/14/2161 3:03","12/15/2161 10:00","12/15/2161 10:08","12/15/2161 14:57","12/15/2161 1:59","12/15/2161 22:00","12/16/2161 10:26","12/16/2161 14:18","12/16/2161 17:00","12/16/2161 22:00","12/16/2161 2:24","12/16/2161 2:34","12/16/2161 4:00","12/16/2161 9:40","12/17/2161 10:00","12/17/2161 15:00","12/17/2161 18:00","12/17/2161 2:01","12/9/2161 17:01","12/9/2161 18:08","12/9/2161 22:00"],"tags":[[["charttime","charttime",null]]]},"id":"96001","type":"FactorRange"},{"attributes":{},"id":"96024","type":"WheelZoomTool"},{"attributes":{},"id":"96011","type":"LinearScale"},{"attributes":{"callback":null,"end":618.0,"reset_end":618.0,"reset_start":25.0,"start":25.0,"tags":[[["valuenum","valuenum",null]]]},"id":"96002","type":"Range1d"},{"attributes":{"dimension":1,"grid_line_color":{"value":null},"plot":{"id":"96005","subtype":"Figure","type":"Plot"},"ticker":{"id":"96018","type":"BasicTicker"}},"id":"96021","type":"Grid"},{"attributes":{"axis_label":"charttime","bounds":"auto","formatter":{"id":"96045","type":"CategoricalTickFormatter"},"major_label_orientation":"horizontal","plot":{"id":"96005","subtype":"Figure","type":"Plot"},"ticker":{"id":"96014","type":"CategoricalTicker"}},"id":"96013","type":"CategoricalAxis"},{"attributes":{},"id":"96037","type":"Selection"},{"attributes":{"bottom_units":"screen","fill_alpha":{"value":0.5},"fill_color":{"value":"lightgrey"},"left_units":"screen","level":"overlay","line_alpha":{"value":1.0},"line_color":{"value":"black"},"line_dash":[4,4],"line_width":{"value":2},"plot":null,"render_mode":"css","right_units":"screen","top_units":"screen"},"id":"96031","type":"BoxAnnotation"},{"attributes":{"source":{"id":"96036","type":"ColumnDataSource"}},"id":"96043","type":"CDSView"},{"attributes":{"grid_line_color":{"value":null},"plot":{"id":"96005","subtype":"Figure","type":"Plot"},"ticker":{"id":"96014","type":"CategoricalTicker"}},"id":"96016","type":"Grid"},{"attributes":{},"id":"96022","type":"SaveTool"},{"attributes":{},"id":"96046","type":"BasicTickFormatter"},{"attributes":{"line_alpha":0.2,"line_color":"red","line_width":2,"x":{"field":"charttime"},"y":{"field":"valuenum"}},"id":"96041","type":"Line"},{"attributes":{},"id":"96023","type":"PanTool"}],"root_ids":["96005"]},"title":"Bokeh Application","version":"1.0.4"}};
+  var render_items = [{"docid":"68102225-e85e-4d96-adc9-75e6bf60fcdc","roots":{"96005":"e872a298-062e-4c8d-9699-1c7ae922d143"}}];
+  root.Bokeh.embed.embed_items_notebook(docs_json, render_items);
+
+  }
+  if (root.Bokeh !== undefined) {
+    embed_document(root);
+  } else {
+    var attempts = 0;
+    var timer = setInterval(function(root) {
+      if (root.Bokeh !== undefined) {
+        embed_document(root);
+        clearInterval(timer);
+      }
+      attempts++;
+      if (attempts > 100) {
+        console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+        clearInterval(timer);
+      }
+    }, 10, root)
+  }
+})(window);</script>
+  </body>
+</html>
